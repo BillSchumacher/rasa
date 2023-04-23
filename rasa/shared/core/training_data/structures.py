@@ -132,7 +132,7 @@ class StoryStep:
         self.source_name = source_name
         # put a counter prefix to uuid to get reproducible sorting results
         global STEP_COUNT
-        self.id = "{}_{}".format(STEP_COUNT, uuid.uuid4().hex)
+        self.id = f"{STEP_COUNT}_{uuid.uuid4().hex}"
         STEP_COUNT += 1
 
     def create_copy(self, use_new_id: bool) -> "StoryStep":
@@ -217,15 +217,10 @@ class StoryStep:
             if isinstance(event, UserUttered):
                 result += self._user_string(event, e2e)
             elif isinstance(event, Event):
-                converted = event.as_story_string()
-                if converted:
+                if converted := event.as_story_string():
                     result += self._bot_string(event)
             elif isinstance(event, list):
-                # The story reader classes support reading stories in
-                # conversion mode.  When this mode is enabled, OR statements
-                # are represented as lists of events.
-                or_string = self._or_string(event, e2e)
-                if or_string:
+                if or_string := self._or_string(event, e2e):
                     result += or_string
             else:
                 raise Exception(f"Unexpected element in story step: {event}")
@@ -402,18 +397,17 @@ class Story:
         return Dialogue(sender_id, events)
 
     def as_story_string(self, flat: bool = False, e2e: bool = False) -> Text:
-        story_content = ""
-        for step in self.story_steps:
-            story_content += step.as_story_string(flat, e2e)
-
-        if flat:
-            if self.story_name:
-                name = self.story_name
-            else:
-                name = "Generated Story {}".format(hash(story_content))
-            return f"## {name}\n{story_content}"
-        else:
+        story_content = "".join(
+            step.as_story_string(flat, e2e) for step in self.story_steps
+        )
+        if not flat:
             return story_content
+        name = (
+            self.story_name
+            if self.story_name
+            else f"Generated Story {hash(story_content)}"
+        )
+        return f"## {name}\n{story_content}"
 
 
 class StoryGraph:
@@ -514,9 +508,9 @@ class StoryGraph:
                 cid = generate_id(max_chars=GENERATED_HASH_LENGTH)
                 prefix = GENERATED_CHECKPOINT_PREFIX + CHECKPOINT_CYCLE_PREFIX
                 # need abbreviations otherwise they are not visualized well
-                sink_cp_name = prefix + "SINK_" + cid
-                connector_cp_name = prefix + "CONN_" + cid
-                source_cp_name = prefix + "SRC_" + cid
+                sink_cp_name = f"{prefix}SINK_{cid}"
+                connector_cp_name = f"{prefix}CONN_{cid}"
+                source_cp_name = f"{prefix}SRC_{cid}"
                 story_end_checkpoints[sink_cp_name] = source_cp_name
 
                 overlapping_cps = self.overlapping_checkpoint_names(
@@ -636,10 +630,10 @@ class StoryGraph:
         """Checks if checkpoint with name and conditions is
         already in the list of checkpoints.
         """
-        for cp in cps:
-            if checkpoint_name == cp.name and conditions == cp.conditions:
-                return True
-        return False
+        return any(
+            checkpoint_name == cp.name and conditions == cp.conditions
+            for cp in cps
+        )
 
     @staticmethod
     def _find_unused_checkpoints(
@@ -828,9 +822,6 @@ def _cap_length(s: Text, char_limit: int = 20, append_ellipsis: bool = True) -> 
     Appends an ellipsis if the string is too long.
     """
     if len(s) > char_limit:
-        if append_ellipsis:
-            return s[: char_limit - 3] + "..."
-        else:
-            return s[:char_limit]
+        return f"{s[:char_limit - 3]}..." if append_ellipsis else s[:char_limit]
     else:
         return s

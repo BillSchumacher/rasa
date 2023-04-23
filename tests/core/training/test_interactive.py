@@ -180,10 +180,14 @@ def all_events_before_latest_user_msg(
 ) -> List[Dict[Text, Any]]:
     """Return all events that happened before the most recent user message."""
 
-    for i, e in enumerate(reversed(events)):
-        if e.get("event") == UserUttered.type_name:
-            return events[: -(i + 1)]
-    return events
+    return next(
+        (
+            events[: -(i + 1)]
+            for i, e in enumerate(reversed(events))
+            if e.get("event") == UserUttered.type_name
+        ),
+        events,
+    )
 
 
 def test_all_events_before_user_msg_on_no_events():
@@ -197,9 +201,7 @@ async def test_print_history(mock_endpoint):
 
     sender_id = uuid.uuid4().hex
 
-    url = "{}/conversations/{}/tracker?include_events=AFTER_RESTART".format(
-        mock_endpoint.url, sender_id
-    )
+    url = f"{mock_endpoint.url}/conversations/{sender_id}/tracker?include_events=AFTER_RESTART"
     with aioresponses() as mocked:
         mocked.get(url, body=tracker_dump, headers={"Accept": "application/json"})
 
@@ -215,9 +217,7 @@ async def test_is_listening_for_messages(mock_endpoint):
 
     sender_id = uuid.uuid4().hex
 
-    url = "{}/conversations/{}/tracker?include_events=APPLIED".format(
-        mock_endpoint.url, sender_id
-    )
+    url = f"{mock_endpoint.url}/conversations/{sender_id}/tracker?include_events=APPLIED"
     with aioresponses() as mocked:
         mocked.get(url, body=tracker_dump, headers={"Content-Type": "application/json"})
 
@@ -459,12 +459,8 @@ async def test_undo_latest_msg(mock_endpoint):
 
     sender_id = uuid.uuid4().hex
 
-    url = "{}/conversations/{}/tracker?include_events=ALL".format(
-        mock_endpoint.url, sender_id
-    )
-    append_url = "{}/conversations/{}/tracker/events".format(
-        mock_endpoint.url, sender_id
-    )
+    url = f"{mock_endpoint.url}/conversations/{sender_id}/tracker?include_events=ALL"
+    append_url = f"{mock_endpoint.url}/conversations/{sender_id}/tracker/events"
     with aioresponses() as mocked:
         mocked.get(url, body=tracker_dump)
         mocked.post(append_url)
@@ -606,10 +602,8 @@ async def test_filter_intents_before_save_nlu_file(domain_path: Text):
 
     domain_file = domain_path
     domain = Domain.load(domain_file)
-    intents = domain.intents
-
     msgs = test_msgs.copy()
-    if intents:
+    if intents := domain.intents:
         another_greet = greet.copy()
         another_greet[TEXT] = INTENT_MESSAGE_PREFIX + choice(intents)
         msgs.append(Message(data=another_greet))
@@ -695,10 +689,7 @@ class QuestionaryConfirmMock:
 
     async def ask_async(self) -> bool:
         self.tries -= 1
-        if self.tries == 0:
-            return False
-        else:
-            return True
+        return self.tries != 0
 
 
 async def test_retry_on_error_success(monkeypatch: MonkeyPatch):

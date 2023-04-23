@@ -163,23 +163,25 @@ def moodbot_features(
     """
     origin = getattr(request, "param", "SingleStateFeaturizer")
     action_shape = (1, len(moodbot_domain.action_names_or_texts))
-    actions = {}
-    for index, action in enumerate(moodbot_domain.action_names_or_texts):
-        actions[action] = Features(
+    actions = {
+        action: Features(
             sparse.coo_matrix(([1.0], [[0], [index]]), shape=action_shape),
             FEATURE_TYPE_SENTENCE,
             ACTION_NAME,
             origin,
         )
+        for index, action in enumerate(moodbot_domain.action_names_or_texts)
+    }
     intent_shape = (1, len(moodbot_domain.intents))
-    intents = {}
-    for index, intent in enumerate(moodbot_domain.intents):
-        intents[intent] = Features(
+    intents = {
+        intent: Features(
             sparse.coo_matrix(([1.0], [[0], [index]]), shape=intent_shape),
             FEATURE_TYPE_SENTENCE,
             INTENT,
             origin,
         )
+        for index, intent in enumerate(moodbot_domain.intents)
+    }
     return {"intents": intents, "actions": actions}
 
 

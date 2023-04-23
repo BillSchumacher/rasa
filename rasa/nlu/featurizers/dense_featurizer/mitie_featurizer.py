@@ -121,9 +121,7 @@ class MitieFeaturizer(DenseFeaturizer, GraphComponent):
         attribute: Text,
         mitie_feature_extractor: "mitie.total_word_feature_extractor",
     ) -> None:
-        tokens = example.get(TOKENS_NAMES[attribute])
-
-        if tokens:
+        if tokens := example.get(TOKENS_NAMES[attribute]):
             sequence_features, sentence_features = self.features_for_tokens(
                 tokens, mitie_feature_extractor
             )

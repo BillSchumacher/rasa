@@ -113,8 +113,7 @@ class GraphSchema:
                     serialized_node["uses"]
                 )
 
-                resource = serialized_node["resource"]
-                if resource:
+                if resource := serialized_node["resource"]:
                     serialized_node["resource"] = Resource(**resource)
 
             except ImportError as e:
@@ -407,11 +406,10 @@ class GraphNode:
                 raise GraphComponentException(
                     f"Error initializing graph component for node {self._node_name}."
                 ) from e
-            else:
-                logger.error(
-                    f"Error initializing graph component for node {self._node_name}."
-                )
-                raise
+            logger.error(
+                f"Error initializing graph component for node {self._node_name}."
+            )
+            raise
 
     def _get_resource(self, kwargs: Dict[Text, Any]) -> Resource:
         if "resource" in kwargs:
@@ -494,11 +492,10 @@ class GraphNode:
                 raise GraphComponentException(
                     f"Error running graph component for node {self._node_name}."
                 ) from e
-            else:
-                logger.error(
-                    f"Error running graph component for node {self._node_name}."
-                )
-                raise
+            logger.error(
+                f"Error running graph component for node {self._node_name}."
+            )
+            raise
 
         self._run_after_hooks(input_hook_outputs, output)
 

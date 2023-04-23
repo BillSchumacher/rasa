@@ -159,9 +159,7 @@ def validate_config_path(
 
     if not config or not os.path.exists(config):
         print_error(
-            "The config file '{}' does not exist. Use '--config' to specify a "
-            "valid config file."
-            "".format(config)
+            f"The config file '{config}' does not exist. Use '--config' to specify a valid config file."
         )
         sys.exit(1)
 
@@ -182,12 +180,11 @@ def validate_mandatory_config_keys(
 
     Returns: The path to the config file if the config is valid.
     """
-    missing_keys = set(rasa.cli.utils.missing_config_keys(config, mandatory_keys))
-    if missing_keys:
+    if missing_keys := set(
+        rasa.cli.utils.missing_config_keys(config, mandatory_keys)
+    ):
         print_error(
-            "The config file '{}' is missing mandatory parameters: "
-            "'{}'. Add missing parameters to config file and try again."
-            "".format(config, "', '".join(missing_keys))
+            f"""The config file '{config}' is missing mandatory parameters: '{"', '".join(missing_keys)}'. Add missing parameters to config file and try again."""
         )
         sys.exit(1)
 
@@ -225,8 +222,7 @@ def cancel_cause_not_found(
     if default:
         default_clause = f"use the default location ('{default}') or "
     rasa.shared.utils.cli.print_error(
-        "The path '{}' does not exist. Please make sure to {}specify it"
-        " with '--{}'.".format(current, default_clause, parameter)
+        f"The path '{current}' does not exist. Please make sure to {default_clause}specify it with '--{parameter}'."
     )
     sys.exit(1)
 
@@ -250,33 +246,21 @@ def button_to_string(button: Dict[Text, Any], idx: int = 0) -> Text:
     """Create a string representation of a button."""
     title = button.pop("title", "")
 
-    if "payload" in button:
-        payload = " ({})".format(button.pop("payload"))
-    else:
-        payload = ""
-
+    payload = f' ({button.pop("payload")})' if "payload" in button else ""
     # if there are any additional attributes, we append them to the output
-    if button:
-        details = " - {}".format(json.dumps(button, sort_keys=True))
-    else:
-        details = ""
-
-    button_string = "{idx}: {title}{payload}{details}".format(
+    details = " - {}".format(json.dumps(button, sort_keys=True)) if button else ""
+    return "{idx}: {title}{payload}{details}".format(
         idx=idx + 1, title=title, payload=payload, details=details
     )
-
-    return button_string
 
 
 def element_to_string(element: Dict[Text, Any], idx: int = 0) -> Text:
     """Create a string representation of an element."""
     title = element.pop("title", "")
 
-    element_string = "{idx}: {title} - {element}".format(
+    return "{idx}: {title} - {element}".format(
         idx=idx + 1, title=title, element=json.dumps(element, sort_keys=True)
     )
-
-    return element_string
 
 
 def button_choices_from_message_data(

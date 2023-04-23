@@ -388,9 +388,7 @@ class LocalTrainingCache(TrainingCache):
             query = sa.select(self.CacheEntry).filter_by(
                 fingerprint_key=fingerprint_key
             )
-            match = session.execute(query).scalars().first()
-
-            if match:
+            if match := session.execute(query).scalars().first():
                 # This result was used during a fingerprint run.
                 match.last_used = datetime.utcnow()
                 return match.output_fingerprint_key
@@ -433,9 +431,7 @@ class LocalTrainingCache(TrainingCache):
                 self.CacheEntry.result_location != sa.null(),
             )
 
-            match = session.execute(query).first()
-
-            if match:
+            if match := session.execute(query).first():
                 return Path(match.result_location), match.result_type
 
             return None, None

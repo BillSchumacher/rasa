@@ -146,11 +146,9 @@ def test_count_vector_featurizer_response_attribute_featurization(
 
     if intent_features:
         assert intent_seq_vecs.toarray()[0] == intent_features
-        assert intent_sen_vecs is None
     else:
         assert intent_seq_vecs is None
-        assert intent_sen_vecs is None
-
+    assert intent_sen_vecs is None
     if response_features:
         assert response_seq_vecs.toarray()[0] == response_features
         assert response_sen_vecs is not None
@@ -203,11 +201,9 @@ def test_count_vector_featurizer_attribute_featurization(
         response_sen_vecs = response_sen_vecs.features
     if intent_features:
         assert intent_seq_vecs.toarray()[0] == intent_features
-        assert intent_sen_vecs is None
     else:
         assert intent_seq_vecs is None
-        assert intent_sen_vecs is None
-
+    assert intent_sen_vecs is None
     if response_features:
         assert response_seq_vecs.toarray()[0] == response_features
         assert response_sen_vecs is not None
@@ -453,7 +449,7 @@ def test_count_vector_featurizer_persist_load(
     }
 
     # add trained vocabulary to vectorizer params
-    for attribute, attribute_vect_params in train_vect_params.items():
+    for attribute in train_vect_params:
         if hasattr(train_ftr.vectorizers[attribute], "vocabulary_"):
             train_vect_params[attribute].update(
                 {"vocabulary": train_ftr.vectorizers[attribute].vocabulary_}
@@ -657,11 +653,9 @@ def test_count_vector_featurizer_action_attribute_featurization(
 
     if action_name_features:
         assert action_name_seq_vecs.toarray()[0] == action_name_features
-        assert action_name_sen_vecs is None
     else:
         assert action_name_seq_vecs is None
-        assert action_name_sen_vecs is None
-
+    assert action_name_sen_vecs is None
     if response_features:
         assert response_seq_vecs.toarray()[0] == response_features
         assert response_sen_vecs is not None

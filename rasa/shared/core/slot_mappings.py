@@ -78,11 +78,10 @@ class SlotMapping:
     ) -> List[Text]:
         from rasa.shared.core.constants import ACTIVE_LOOP
 
-        mapping_conditions = mapping.get(MAPPING_CONDITIONS)
         active_loop_match = True
         ignored_intents = []
 
-        if mapping_conditions:
+        if mapping_conditions := mapping.get(MAPPING_CONDITIONS):
             match_list = [
                 condition.get(ACTIVE_LOOP) == active_loop_name
                 for condition in mapping_conditions
@@ -105,8 +104,7 @@ class SlotMapping:
         mapping_intents = SlotMapping.to_list(mapping.get(INTENT, []))
         mapping_not_intents = SlotMapping.to_list(mapping.get(NOT_INTENT, []))
 
-        active_loop_name = tracker.active_loop_name
-        if active_loop_name:
+        if active_loop_name := tracker.active_loop_name:
             mapping_not_intents = (
                 mapping_not_intents
                 + SlotMapping._get_active_loop_ignored_intents(

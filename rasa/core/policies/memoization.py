@@ -129,7 +129,7 @@ class MemoizationPolicy(Policy):
                 continue
 
             if feature_key not in ambiguous_feature_keys:
-                if feature_key in lookup.keys():
+                if feature_key in lookup:
                     if lookup[feature_key] != action:
                         # delete contradicting example created by
                         # partial history augmentation from memory
@@ -149,15 +149,14 @@ class MemoizationPolicy(Policy):
         # represented as dictionaries have the same json strings
         # quotes are removed for aesthetic reasons
         feature_str = json.dumps(states, sort_keys=True).replace('"', "")
-        if self.config["enable_feature_string_compression"]:
-            compressed = zlib.compress(
-                bytes(feature_str, rasa.shared.utils.io.DEFAULT_ENCODING)
-            )
-            return base64.b64encode(compressed).decode(
-                rasa.shared.utils.io.DEFAULT_ENCODING
-            )
-        else:
+        if not self.config["enable_feature_string_compression"]:
             return feature_str
+        compressed = zlib.compress(
+            bytes(feature_str, rasa.shared.utils.io.DEFAULT_ENCODING)
+        )
+        return base64.b64encode(compressed).decode(
+            rasa.shared.utils.io.DEFAULT_ENCODING
+        )
 
     def train(
         self,
@@ -491,10 +490,8 @@ def _get_max_applied_events_for_max_history(
     """
     if not max_history:
         return None
-    num_events = 0
     num_actions = 0
-    for event in reversed(tracker.applied_events()):
-        num_events += 1
+    for num_events, event in enumerate(reversed(tracker.applied_events()), start=1):
         if isinstance(event, ActionExecuted):
             num_actions += 1
             if num_actions > max_history and event.action_name == ACTION_LISTEN_NAME:

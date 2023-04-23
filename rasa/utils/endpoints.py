@@ -34,8 +34,7 @@ def read_endpoint_config(
         return EndpointConfig.from_dict(content[endpoint_type])
     except FileNotFoundError:
         logger.error(
-            "Failed to read endpoint configuration "
-            "from {}. No such file.".format(os.path.abspath(filename))
+            f"Failed to read endpoint configuration from {os.path.abspath(filename)}. No such file."
         )
         return None
 
@@ -64,7 +63,7 @@ def concat_url(base: Text, subpath: Optional[Text]) -> Text:
         return base
 
     url = base
-    if not base.endswith("/"):
+    if not url.endswith("/"):
         url += "/"
     if subpath.startswith("/"):
         subpath = subpath[1:]
@@ -146,7 +145,7 @@ class EndpointConfig:
             headers["Content-Type"] = content_type
 
         if "headers" in kwargs:
-            headers.update(kwargs["headers"])
+            headers |= kwargs["headers"]
             del kwargs["headers"]
 
         url = concat_url(self.url, subpath)

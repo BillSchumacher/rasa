@@ -145,8 +145,7 @@ class YAMLStoryWriter(StoryWriter):
         for event in story_step.events:
             if not self._filter_event(event):
                 continue
-            processed = self.process_event(event)
-            if processed:
+            if processed := self.process_event(event):
                 steps.append(processed)
 
         steps.extend(self.process_checkpoints(story_step.end_checkpoints))
@@ -181,10 +180,8 @@ class YAMLStoryWriter(StoryWriter):
             `False` otherwise.
         """
         return any(
-            [
-                [event for event in story_step.events if isinstance(event, ActiveLoop)]
-                for story_step in stories
-            ]
+            [event for event in story_step.events if isinstance(event, ActiveLoop)]
+            for story_step in stories
         )
 
     @staticmethod
@@ -219,10 +216,9 @@ class YAMLStoryWriter(StoryWriter):
                         # of `rasa.shared`
                         for predicted in user_utterance.predicted_entities:  # type: ignore[attr-defined] # noqa: E501
                             if predicted["start"] == entity["start"]:
-                                commented_entity = user_utterance.inline_comment_for_entity(  # noqa: E501
+                                if commented_entity := user_utterance.inline_comment_for_entity(  # noqa: E501
                                     predicted, entity
-                                )
-                                if commented_entity:
+                                ):
                                     entity_map = CommentedMap(
                                         [(entity["entity"], entity["value"])]
                                     )
@@ -245,12 +241,9 @@ class YAMLStoryWriter(StoryWriter):
             result[KEY_ENTITIES] = entities
 
         if hasattr(user_utterance, "inline_comment"):
-            # FIXME: to fix this type issue, WronglyClassifiedUserUtterance needs to
-            # be imported but it's currently outside of `rasa.shared`
-            comment = user_utterance.inline_comment(
+            if comment := user_utterance.inline_comment(
                 force_comment_generation=not entities
-            )
-            if comment:
+            ):
                 result.yaml_add_eol_comment(comment, KEY_USER_INTENT)
 
         if user_utterance.text and (
@@ -383,8 +376,7 @@ class YAMLStoryWriter(StoryWriter):
         condition_steps = []
         condition_events = rule_step.get_rules_condition()
         for event in condition_events:
-            processed = self.process_event(event)
-            if processed:
+            if processed := self.process_event(event):
                 condition_steps.append(processed)
         if condition_steps:
             result[KEY_RULE_CONDITION] = condition_steps
@@ -399,8 +391,7 @@ class YAMLStoryWriter(StoryWriter):
 
         normal_steps = []
         for event in normal_events:
-            processed = self.process_event(event)
-            if processed:
+            if processed := self.process_event(event):
                 normal_steps.append(processed)
         if normal_steps:
             result[KEY_STEPS] = normal_steps

@@ -70,19 +70,15 @@ def raise_warning(
         return True
 
     def formatwarning(
-        message: Union[Warning, Text],
-        category: Type[Warning],
-        filename: Text,
-        lineno: int,
-        line: Optional[Text] = None,
-    ) -> Text:
+            message: Union[Warning, Text],
+            category: Type[Warning],
+            filename: Text,
+            lineno: int,
+            line: Optional[Text] = None,
+        ) -> Text:
         """Function to format a warning the standard way."""
         if not should_show_source_line():
-            if docs:
-                line = f"More info at {docs}"
-            else:
-                line = ""
-
+            line = f"More info at {docs}" if docs else ""
         formatted_message = original_formatter(
             message, category, filename, lineno, line
         )

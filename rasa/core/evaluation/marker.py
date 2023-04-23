@@ -262,6 +262,5 @@ class SlotSetMarker(ConditionMarker):
             # slot is set if and only if it's value is not `None`
             return event.value is not None
         if self.history:
-            was_set = self.history[-1] if not self.negated else not self.history[-1]
-            return was_set
+            return not self.history[-1] if self.negated else self.history[-1]
         return False

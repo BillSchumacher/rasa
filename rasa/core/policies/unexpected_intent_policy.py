@@ -458,13 +458,13 @@ class UnexpecTEDIntentPolicy(TEDPolicy):
         """
         trackers_for_training = []
         for tracker in trackers:
-            tracker_compatible = True
-            for event in tracker.applied_events():
-                if (isinstance(event, UserUttered) and event.intent_name is None) or (
+            tracker_compatible = not any(
+                (isinstance(event, UserUttered) and event.intent_name is None)
+                or (
                     isinstance(event, ActionExecuted) and event.action_name is None
-                ):
-                    tracker_compatible = False
-                    break
+                )
+                for event in tracker.applied_events()
+            )
             if tracker_compatible:
                 trackers_for_training.append(tracker)
         return trackers_for_training
@@ -526,12 +526,12 @@ class UnexpecTEDIntentPolicy(TEDPolicy):
         query_intent_index = domain.intents.index(query_intent)
 
         def _compile_metadata_for_label(
-            label_name: Text, similarity_score: float, threshold: Optional[float]
-        ) -> RankingCandidateMetadata:
+                label_name: Text, similarity_score: float, threshold: Optional[float]
+            ) -> RankingCandidateMetadata:
             severity = float(threshold - similarity_score) if threshold else None
             return RankingCandidateMetadata(
                 label_name,
-                float(similarity_score),
+                similarity_score,
                 float(threshold) if threshold else None,
                 severity,
             )
@@ -544,8 +544,7 @@ class UnexpecTEDIntentPolicy(TEDPolicy):
 
         # Ranking in descending order of predicted similarities
         sorted_similarities = sorted(
-            [(index, similarity) for index, similarity in enumerate(similarities[0])],
-            key=lambda x: -x[1],
+            list(enumerate(similarities[0])), key=lambda x: -x[1]
         )
 
         if self.config[RANKING_LENGTH] > 0:
@@ -986,9 +985,7 @@ class IntentTED(TED):
             tf.int32,
         )
 
-        labels_embed = tf.gather(all_labels_embed, indices_to_gather)
-
-        return labels_embed
+        return tf.gather(all_labels_embed, indices_to_gather)
 
     def run_bulk_inference(
         self, model_data: RasaModelData

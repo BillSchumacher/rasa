@@ -30,12 +30,9 @@ def create_or_load_convert_featurizer(
     default_model_storage: ModelStorage, default_execution_context: ExecutionContext
 ) -> Callable[[Dict[Text, Any], bool], ConveRTFeaturizer]:
     def inner(
-        config: Dict[Text, Any], load: bool = False
-    ) -> Callable[[Dict[Text, Any], bool], ConveRTFeaturizer]:
-        if load:
-            constructor = ConveRTFeaturizer.load
-        else:
-            constructor = ConveRTFeaturizer.create
+            config: Dict[Text, Any], load: bool = False
+        ) -> Callable[[Dict[Text, Any], bool], ConveRTFeaturizer]:
+        constructor = ConveRTFeaturizer.load if load else ConveRTFeaturizer.create
         return constructor(
             config,
             model_storage=default_model_storage,

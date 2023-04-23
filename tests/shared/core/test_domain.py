@@ -72,10 +72,7 @@ def test_create_train_data_no_history(domain: Domain, stories_path: Text):
     assert len(training_trackers) == 4
     (decoded, _) = featurizer.training_states_and_labels(training_trackers, domain)
 
-    # decoded needs to be sorted
-    hashed = []
-    for states in decoded:
-        hashed.append(json.dumps(states, sort_keys=True))
+    hashed = [json.dumps(states, sort_keys=True) for states in decoded]
     hashed = sorted(hashed, reverse=True)
 
     assert hashed == [
@@ -99,10 +96,7 @@ def test_create_train_data_with_history(domain: Domain, stories_path: Text):
     assert len(training_trackers) == 4
     (decoded, _) = featurizer.training_states_and_labels(training_trackers, domain)
 
-    # decoded needs to be sorted
-    hashed = []
-    for states in decoded:
-        hashed.append(json.dumps(states, sort_keys=True))
+    hashed = [json.dumps(states, sort_keys=True) for states in decoded]
     hashed = sorted(hashed)
 
     assert hashed == [
@@ -917,11 +911,7 @@ def test_domain_from_multiple_files():
         "session_started_metadata",
     ]
 
-    domain_slots = []
-
-    for slot in domain.slots:
-        domain_slots.append(slot.name)
-
+    domain_slots = [slot.name for slot in domain.slots]
     assert expected_intents == domain.intents
     assert expected_entities == sorted(domain.entities)
     assert sorted(expected_actions) == sorted(domain.user_actions)
@@ -967,7 +957,7 @@ def test_domain_warnings(domain: Domain):
     )
 
     for diff_dict in domain_warnings.values():
-        assert all(not diff_set for diff_set in diff_dict.values())
+        assert not any(diff_dict.values())
 
 
 def test_unfeaturized_slot_in_domain_warnings():

@@ -37,12 +37,8 @@ def add_subparser(
         "parents": parents,
         "conflict_handler": "resolve",
         "formatter_class": argparse.ArgumentDefaultsHelpFormatter,
+        "help": "Run a Rasa server in a mode that enables connecting to Rasa Enterprise as the config endpoint.",
     }
-
-    x_parser_args["help"] = (
-        "Run a Rasa server in a mode that enables connecting "
-        "to Rasa Enterprise as the config endpoint."
-    )
 
     shell_parser = subparsers.add_parser("x", **x_parser_args)
     shell_parser.set_defaults(func=rasa_x)
@@ -101,9 +97,7 @@ def _prepare_credentials_for_rasa_x(
     if rasa_x_url:
         credentials["rasa"] = {"url": rasa_x_url}
     dumped_credentials = yaml.dump(credentials, default_flow_style=False)
-    tmp_credentials = rasa.utils.io.create_temporary_file(dumped_credentials, "yml")
-
-    return tmp_credentials
+    return rasa.utils.io.create_temporary_file(dumped_credentials, "yml")
 
 
 def rasa_x(args: argparse.Namespace) -> None:
@@ -149,14 +143,11 @@ async def _pull_runtime_config_from_server(
                             ]
                         except KeyError as e:
                             rasa.shared.utils.cli.print_error_and_exit(
-                                "Failed to find key '{}' in runtime config. "
-                                "Exiting.".format(e)
+                                f"Failed to find key '{e}' in runtime config. Exiting."
                             )
                     else:
                         logger.debug(
-                            "Failed to get a proper response from remote "
-                            "server. Status Code: {}. Response: '{}'"
-                            "".format(resp.status, await resp.text())
+                            f"Failed to get a proper response from remote server. Status Code: {resp.status}. Response: '{await resp.text()}'"
                         )
         except aiohttp.ClientError as e:
             logger.debug(f"Failed to connect to server. Retrying. {e}")
@@ -165,8 +156,7 @@ async def _pull_runtime_config_from_server(
         attempts -= 1
 
     rasa.shared.utils.cli.print_error_and_exit(
-        "Could not fetch runtime config from server at '{}'. "
-        "Exiting.".format(config_endpoint)
+        f"Could not fetch runtime config from server at '{config_endpoint}'. Exiting."
     )
 
 
@@ -185,10 +175,9 @@ def run_in_enterprise_connection_mode(args: argparse.Namespace) -> None:
 def _get_credentials_and_endpoints_paths(
     args: argparse.Namespace,
 ) -> Tuple[Optional[Text], Optional[Text]]:
-    config_endpoint = args.config_endpoint
     endpoints_config_path: Optional[Union[Path, Text]]
 
-    if config_endpoint:
+    if config_endpoint := args.config_endpoint:
         endpoints_config_path, credentials_path = asyncio.run(
             _pull_runtime_config_from_server(config_endpoint)
         )

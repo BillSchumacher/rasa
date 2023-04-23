@@ -35,9 +35,7 @@ class CallbackOutput(CollectingOutputChannel):
             )
         except ClientResponseError as e:
             logger.error(
-                "Failed to send output message to callback. "
-                "Status: {} Response: {}"
-                "".format(e.status, e.text)
+                f"Failed to send output message to callback. Status: {e.status} Response: {e.text}"
             )
 
 

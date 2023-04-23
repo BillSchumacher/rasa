@@ -11,7 +11,7 @@ def check_graph_is_sorted(g, sorted_nodes, removed_edges):
         deps = incoming_edges.get(n, [])
         # checks that all incoming edges are from nodes we have already visited
         assert all(
-            [d in visited or (d, n) in removed_edges for d in deps]
+            d in visited or (d, n) in removed_edges for d in deps
         ), "Found an incoming edge from a node that wasn't visited yet!"
         visited.add(n)
 
@@ -27,7 +27,7 @@ def test_node_ordering():
     }
     sorted_nodes, removed_edges = StoryGraph.topological_sort(example_graph)
     # sorting removed_edges converting set converting it to list
-    assert removed_edges == list()
+    assert removed_edges == []
     check_graph_is_sorted(example_graph, sorted_nodes, removed_edges)
 
 

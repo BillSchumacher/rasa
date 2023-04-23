@@ -55,14 +55,12 @@ def load_data(resource_name: Text, language: Optional[Text] = "en") -> "Training
 
     data_sets = [_load(f, language) for f in files]
     training_data_sets: List[TrainingData] = [ds for ds in data_sets if ds]
-    if len(training_data_sets) == 0:
-        training_data = TrainingData()
+    if not training_data_sets:
+        return TrainingData()
     elif len(training_data_sets) == 1:
-        training_data = training_data_sets[0]
+        return training_data_sets[0]
     else:
-        training_data = training_data_sets[0].merge(*training_data_sets[1:])
-
-    return training_data
+        return training_data_sets[0].merge(*training_data_sets[1:])
 
 
 def _reader_factory(fformat: Text) -> Optional["TrainingDataReader"]:
@@ -96,9 +94,7 @@ def _load(filename: Text, language: Optional[Text] = "en") -> Optional["Training
     if fformat == UNK:
         raise ValueError(f"Unknown data format for file '{filename}'.")
 
-    reader = _reader_factory(fformat)
-
-    if reader:
+    if reader := _reader_factory(fformat):
         return reader.read(filename, language=language, fformat=fformat)
     else:
         return None

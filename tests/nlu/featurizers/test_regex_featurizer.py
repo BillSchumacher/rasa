@@ -451,7 +451,7 @@ def test_lookup_with_and_without_boundaries(
 
     sequence_features = sequence_features.toarray()
     sentence_features = sentence_features.toarray()
-    num_of_patterns = sum([len(lookup["elements"]) for lookup in lookups])
+    num_of_patterns = sum(len(lookup["elements"]) for lookup in lookups)
     assert sequence_features.shape == (
         len(message.get(TOKENS_NAMES[TEXT])),
         num_of_patterns,

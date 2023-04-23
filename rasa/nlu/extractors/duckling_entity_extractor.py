@@ -22,15 +22,14 @@ logger = logging.getLogger(__name__)
 
 
 def extract_value(match: Dict[Text, Any]) -> Dict[Text, Any]:
-    if match["value"].get("type") == "interval":
-        value = {
+    return (
+        {
             "to": match["value"].get("to", {}).get("value"),
             "from": match["value"].get("from", {}).get("value"),
         }
-    else:
-        value = match["value"].get("value")
-
-    return value
+        if match["value"].get("type") == "interval"
+        else match["value"].get("value")
+    )
 
 
 def convert_duckling_format_to_rasa(
@@ -142,26 +141,19 @@ class DucklingEntityExtractor(GraphComponent, EntityExtractorMixin):
             )
             if response.status_code == 200:
                 return response.json()
-            else:
-                logger.error(
-                    f"Failed to get a proper response from remote "
-                    f"duckling at '{parse_url}. "
-                    f"Status Code: {response.status_code}. "
-                    f"Response: {response.text}"
-                )
-                return []
+            logger.error(
+                f"Failed to get a proper response from remote "
+                f"duckling at '{parse_url}. "
+                f"Status Code: {response.status_code}. "
+                f"Response: {response.text}"
+            )
+            return []
         except (
             requests.exceptions.ConnectionError,
             requests.exceptions.ReadTimeout,
         ) as e:
             logger.error(
-                "Failed to connect to duckling http server. Make sure "
-                "the duckling server is running/healthy/not stale and the proper host "
-                "and port are set in the configuration. More "
-                "information on how to run the server can be found on "
-                "github: "
-                "https://github.com/facebook/duckling#quickstart "
-                "Error: {}".format(e)
+                f"Failed to connect to duckling http server. Make sure the duckling server is running/healthy/not stale and the proper host and port are set in the configuration. More information on how to run the server can be found on github: https://github.com/facebook/duckling#quickstart Error: {e}"
             )
             return []
 
@@ -172,9 +164,7 @@ class DucklingEntityExtractor(GraphComponent, EntityExtractorMixin):
                 return message.time * 1000
             except ValueError as e:
                 logging.warning(
-                    "Could not parse timestamp {}. Instead "
-                    "current UTC time will be passed to "
-                    "duckling. Error: {}".format(message.time, e)
+                    f"Could not parse timestamp {message.time}. Instead current UTC time will be passed to duckling. Error: {e}"
                 )
         # fallbacks to current time, multiplied by 1000 because duckling
         # requires the reftime in milliseconds
@@ -188,7 +178,7 @@ class DucklingEntityExtractor(GraphComponent, EntityExtractorMixin):
                 "`url` configuration in the config "
                 "file nor is `RASA_DUCKLING_HTTP_URL` "
                 "set as an environment variable. No entities will be extracted!",
-                docs=DOCS_URL_COMPONENTS + "#DucklingEntityExtractor",
+                docs=f"{DOCS_URL_COMPONENTS}#DucklingEntityExtractor",
             )
             return messages
 

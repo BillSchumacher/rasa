@@ -208,7 +208,7 @@ def _transfer_style(
 
     for c in special_classes:
         if c in clazzes and c not in target["class"]:
-            target["class"] += " " + c
+            target["class"] += f" {c}"
 
     target["class"] = target["class"].strip()
     return target
@@ -503,16 +503,17 @@ def visualize_neighborhood(
                 target = TMP_NODE_ID
             else:
                 target = TMP_NODE_ID
-        elif idx == len(events) - 1:
+        elif (
+            idx == len(events) - 1
+            or not current_node
+            or current_node in path_ellipsis_ends
+        ):
             target = END_NODE_ID
-        elif current_node and current_node not in path_ellipsis_ends:
+        else:
             graph.add_node(special_node_idx, label="...", **{"class": "ellipsis"})
             target = special_node_idx
             path_ellipsis_ends.add(current_node)
             special_node_idx -= 1
-        else:
-            target = END_NODE_ID
-
         _add_message_edge(graph, message, current_node, target, is_current)
 
     if should_merge_nodes:
@@ -594,7 +595,7 @@ def visualize_stories(
     completed_trackers = g.generate()
     event_sequences = [t.events for t in completed_trackers]
 
-    graph = visualize_neighborhood(
+    return visualize_neighborhood(
         None,
         event_sequences,
         output_file,
@@ -604,4 +605,3 @@ def visualize_stories(
         max_distance=1,
         fontsize=fontsize,
     )
-    return graph

@@ -38,8 +38,7 @@ def test_docs_training_data(mdx_file_path: Path):
     lines_with_errors: List[Tuple[Text, Text]] = []
 
     for match in matches:
-        yaml_path = match.group("yaml_path")
-        if yaml_path:
+        if yaml_path := match.group("yaml_path"):
             with (DOCS_BASE_DIR / yaml_path).open("r") as handle:
                 codeblock = handle.read()
         else:

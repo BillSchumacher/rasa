@@ -28,17 +28,13 @@ def train_comparison_models(
     policy_configs = policy_configs or []
 
     for r in range(runs):
-        logging.info("Starting run {}/{}".format(r + 1, runs))
+        logging.info(f"Starting run {r + 1}/{runs}")
 
         for current_run, percentage in enumerate(exclusion_percentages, 1):
             for policy_config in policy_configs:
                 config_name = os.path.splitext(os.path.basename(policy_config))[0]
                 logging.info(
-                    "Starting to train {} round {}/{}"
-                    " with {}% exclusion"
-                    "".format(
-                        config_name, current_run, len(exclusion_percentages), percentage
-                    )
+                    f"Starting to train {config_name} round {current_run}/{len(exclusion_percentages)} with {percentage}% exclusion"
                 )
 
                 rasa.model_training.train_core(

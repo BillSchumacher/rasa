@@ -55,7 +55,7 @@ def test_evaluate_markers_help(run: Callable[..., RunResult]):
 
     lines = [line.strip() for line in help_text.split("\n")]
     # expected help text lines should appear somewhere in the output
-    printed_help = set([line.strip() for line in output.outlines])
+    printed_help = {line.strip() for line in output.outlines}
     for line in lines:
         assert line in printed_help
 
@@ -73,7 +73,7 @@ def test_evaluate_markers_first_n_help(run: Callable[..., RunResult]):
 
     lines = [line.strip() for line in help_text.split("\n")]
     # expected help text lines should appear somewhere in the output
-    printed_help = set([line.strip() for line in output.outlines])
+    printed_help = {line.strip() for line in output.outlines}
     for line in lines:
         assert line in printed_help
 
@@ -91,7 +91,7 @@ def test_evaluate_markers_sample_n_help(run: Callable[..., RunResult]):
 
     lines = [line.strip() for line in help_text.split("\n")]
     # expected help text lines should appear somewhere in the output
-    printed_help = set([line.strip() for line in output.outlines])
+    printed_help = {line.strip() for line in output.outlines}
     for line in lines:
         assert line in printed_help
 
@@ -109,7 +109,7 @@ def test_evaluate_markers_all_help(run: Callable[..., RunResult]):
 
     lines = [line.strip() for line in help_text.split("\n")]
     # expected help text lines should appear somewhere in the output
-    printed_help = set([line.strip() for line in output.outlines])
+    printed_help = {line.strip() for line in output.outlines}
     for line in lines:
         assert line in printed_help
 
@@ -142,11 +142,7 @@ def test_markers_cli_results_save_correctly(
         stats_file_prefix=stats_file_prefix,
     )
 
-    for expected_output in [
-        results_path,
-        tmp_path / ("statistics" + STATS_SESSION_SUFFIX),
-        tmp_path / ("statistics" + STATS_OVERALL_SUFFIX),
-    ]:
+    for expected_output in [results_path, tmp_path / f"statistics{STATS_SESSION_SUFFIX}", tmp_path / f"statistics{STATS_OVERALL_SUFFIX}"]:
         with expected_output.open(mode="r") as results:
             result_reader = csv.DictReader(results)
             # Loop over entire file to ensure nothing in the file causes any errors

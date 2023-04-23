@@ -119,7 +119,7 @@ class TestTEDPolicy(PolicyTestCollection):
         LocalModelStorage.from_model_archive(storage_dir, tmp_path / "my_model.tar.gz")
         model_dir = storage_dir / "train_TEDPolicy0"
         all_files = list(model_dir.rglob("*.*"))
-        assert any(["from_checkpoint" in str(filename) for filename in all_files])
+        assert any("from_checkpoint" in str(filename) for filename in all_files)
 
     def test_doesnt_checkpoint_with_no_checkpointing(
         self, tmp_path: Path, tmp_path_factory: TempPathFactory
@@ -136,7 +136,7 @@ class TestTEDPolicy(PolicyTestCollection):
         LocalModelStorage.from_model_archive(storage_dir, tmp_path / "my_model.tar.gz")
         model_dir = storage_dir / "train_TEDPolicy0"
         all_files = list(model_dir.rglob("*.*"))
-        assert not any(["from_checkpoint" in str(filename) for filename in all_files])
+        assert all("from_checkpoint" not in str(filename) for filename in all_files)
 
     def test_doesnt_checkpoint_with_zero_eval_num_examples(
         self, tmp_path: Path, tmp_path_factory: TempPathFactory
@@ -162,7 +162,7 @@ class TestTEDPolicy(PolicyTestCollection):
         LocalModelStorage.from_model_archive(storage_dir, tmp_path / "my_model.tar.gz")
         model_dir = storage_dir / "train_TEDPolicy0"
         all_files = list(model_dir.rglob("*.*"))
-        assert not any(["from_checkpoint" in str(filename) for filename in all_files])
+        assert all("from_checkpoint" not in str(filename) for filename in all_files)
 
     @pytest.mark.parametrize(
         "should_finetune, epoch_override, expected_epoch_value",
@@ -274,18 +274,14 @@ class TestTEDPolicy(PolicyTestCollection):
 
         # check that ranking length is applied - without normalization
         if trained_policy.config[RANKING_LENGTH] == 0:
-            assert sum(
-                [confidence for confidence in prediction.probabilities]
-            ) == pytest.approx(1)
+            assert sum(list(prediction.probabilities)) == pytest.approx(1)
             assert all(confidence > 0 for confidence in prediction.probabilities)
         else:
             assert (
-                sum([confidence > 0 for confidence in prediction.probabilities])
+                sum(confidence > 0 for confidence in prediction.probabilities)
                 == trained_policy.config[RANKING_LENGTH]
             )
-            assert sum(
-                [confidence for confidence in prediction.probabilities]
-            ) != pytest.approx(1)
+            assert sum(list(prediction.probabilities)) != pytest.approx(1)
 
     def test_label_data_assembly(
         self, trained_policy: TEDPolicy, default_domain: Domain
@@ -382,22 +378,10 @@ class TestTEDPolicy(PolicyTestCollection):
                 batch_slots_sentence_shape[1],
             ]
         )
-        assert (
-            batch_intent_sentence_shape[1] == seq_len
-            or batch_intent_sentence_shape[1] == 0
-        )
-        assert (
-            batch_action_name_sentence_shape[1] == seq_len
-            or batch_action_name_sentence_shape[1] == 0
-        )
-        assert (
-            batch_entities_sentence_shape[1] == seq_len
-            or batch_entities_sentence_shape[1] == 0
-        )
-        assert (
-            batch_slots_sentence_shape[1] == seq_len
-            or batch_slots_sentence_shape[1] == 0
-        )
+        assert batch_intent_sentence_shape[1] in [seq_len, 0]
+        assert batch_action_name_sentence_shape[1] in [seq_len, 0]
+        assert batch_entities_sentence_shape[1] in [seq_len, 0]
+        assert batch_slots_sentence_shape[1] in [seq_len, 0]
 
         data_generator = RasaBatchDataGenerator(
             model_data, batch_size=batch_size, shuffle=True, batch_strategy="balanced"
@@ -441,22 +425,10 @@ class TestTEDPolicy(PolicyTestCollection):
                 batch_slots_sentence_shape[1],
             ]
         )
-        assert (
-            batch_intent_sentence_shape[1] == seq_len
-            or batch_intent_sentence_shape[1] == 0
-        )
-        assert (
-            batch_action_name_sentence_shape[1] == seq_len
-            or batch_action_name_sentence_shape[1] == 0
-        )
-        assert (
-            batch_entities_sentence_shape[1] == seq_len
-            or batch_entities_sentence_shape[1] == 0
-        )
-        assert (
-            batch_slots_sentence_shape[1] == seq_len
-            or batch_slots_sentence_shape[1] == 0
-        )
+        assert batch_intent_sentence_shape[1] in [seq_len, 0]
+        assert batch_action_name_sentence_shape[1] in [seq_len, 0]
+        assert batch_entities_sentence_shape[1] in [seq_len, 0]
+        assert batch_slots_sentence_shape[1] in [seq_len, 0]
 
     @pytest.mark.parametrize(
         "tracker_events_with_action, tracker_events_without_action",
@@ -721,8 +693,8 @@ class TestTEDPolicyNormalization(TestTEDPolicyConfigurationOptions, TestTEDPolic
         predicted_probabilities = trained_policy.predict_action_probabilities(
             tracker, default_domain, precomputations
         ).probabilities
-        assert all([confidence >= 0 for confidence in predicted_probabilities])
-        assert sum([confidence > 0 for confidence in predicted_probabilities]) == 4
+        assert all(confidence >= 0 for confidence in predicted_probabilities)
+        assert sum(confidence > 0 for confidence in predicted_probabilities) == 4
         assert sum(predicted_probabilities) == pytest.approx(1)
 
 

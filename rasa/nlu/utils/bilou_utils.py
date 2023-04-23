@@ -42,9 +42,7 @@ def bilou_prefix_from_tag(tag: Text) -> Optional[Text]:
 
     Returns: the BILOU prefix of the tag
     """
-    if tag[:2] in BILOU_PREFIXES:
-        return tag[:2]
-    return None
+    return tag[:2] if tag[:2] in BILOU_PREFIXES else None
 
 
 def tag_without_prefix(tag: Text) -> Text:
@@ -55,9 +53,7 @@ def tag_without_prefix(tag: Text) -> Text:
 
     Returns: the tag without the BILOU prefix
     """
-    if tag[:2] in BILOU_PREFIXES:
-        return tag[2:]
-    return tag
+    return tag[2:] if tag[:2] in BILOU_PREFIXES else tag
 
 
 def bilou_tags_to_ids(
@@ -76,15 +72,16 @@ def bilou_tags_to_ids(
     """
     bilou_key = get_bilou_key_for_tag(tag_name)
 
-    if message.get(bilou_key):
-        _tags = [
-            tag_id_dict[_tag] if _tag in tag_id_dict else tag_id_dict[NO_ENTITY_TAG]
+    return (
+        [
+            tag_id_dict.get(_tag, tag_id_dict[NO_ENTITY_TAG])
             for _tag in message.get(bilou_key)
         ]
-    else:
-        _tags = [tag_id_dict[NO_ENTITY_TAG] for _ in message.get(TOKENS_NAMES[TEXT])]
-
-    return _tags
+        if message.get(bilou_key)
+        else [
+            tag_id_dict[NO_ENTITY_TAG] for _ in message.get(TOKENS_NAMES[TEXT])
+        ]
+    )
 
 
 def get_bilou_key_for_tag(tag_name: Text) -> Text:
@@ -118,14 +115,12 @@ def build_tag_id_dict(
     """
     bilou_key = get_bilou_key_for_tag(tag_name)
 
-    distinct_tags = set(
-        [
-            tag_without_prefix(e)
-            for example in training_data.nlu_examples
-            if example.get(bilou_key)
-            for e in example.get(bilou_key)
-        ]
-    ) - {NO_ENTITY_TAG}
+    distinct_tags = {
+        tag_without_prefix(e)
+        for example in training_data.nlu_examples
+        if example.get(bilou_key)
+        for e in example.get(bilou_key)
+    } - {NO_ENTITY_TAG}
 
     if not distinct_tags:
         return None
@@ -285,7 +280,7 @@ def ensure_consistent_bilou_tagging(
             # if not all tags are the same, for example, B-person I-person L-location
             # we need to check what tag we should use depending on the confidence
             # values and update the tags and confidences accordingly
-            if not all(relevant_tags[0] == tag for tag in relevant_tags):
+            if any(relevant_tags[0] != tag for tag in relevant_tags):
                 # decide which tag this entity should use
                 tag, tag_score = _tag_to_use(relevant_tags, relevant_confidences)
 
@@ -400,11 +395,10 @@ def _avg_confidence_per_tag(
     for tag, confidence in zip(relevant_tags, relevant_confidences):
         confidences_per_tag[tag].append(confidence)
 
-    avg_confidence_per_tag = {}
-    for tag, confidences in confidences_per_tag.items():
-        avg_confidence_per_tag[tag] = round(sum(confidences) / len(confidences), 2)
-
-    return avg_confidence_per_tag
+    return {
+        tag: round(sum(confidences) / len(confidences), 2)
+        for tag, confidences in confidences_per_tag.items()
+    }
 
 
 def _find_bilou_end(start_idx: int, predicted_tags: List[Text]) -> int:

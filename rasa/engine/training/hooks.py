@@ -85,8 +85,7 @@ class TrainingHook(GraphNodeHook):
     def _get_graph_component_class(
         execution_context: ExecutionContext, node_name: Text
     ) -> Type:
-        graph_component_class = execution_context.graph_schema.nodes[node_name].uses
-        return graph_component_class
+        return execution_context.graph_schema.nodes[node_name].uses
 
 
 class LoggingHook(GraphNodeHook):

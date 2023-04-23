@@ -37,10 +37,8 @@ class StoryStepBuilder:
         else:
             if conditions:
                 rasa.shared.utils.io.raise_warning(
-                    f"End or intermediate checkpoints "
-                    f"do not support conditions! "
-                    f"(checkpoint: {name})",
-                    docs=DOCS_URL_STORIES + "#checkpoints",
+                    f"End or intermediate checkpoints do not support conditions! (checkpoint: {name})",
+                    docs=f"{DOCS_URL_STORIES}#checkpoints",
                 )
             additional_steps = []
             for t in self.current_steps:
@@ -55,10 +53,9 @@ class StoryStepBuilder:
     def _prev_end_checkpoints(self) -> List[Checkpoint]:
         if not self.current_steps:
             return self.start_checkpoints
-        else:
-            # makes sure we got each end name only once
-            end_names = {e.name for s in self.current_steps for e in s.end_checkpoints}
-            return [Checkpoint(name) for name in end_names]
+        # makes sure we got each end name only once
+        end_names = {e.name for s in self.current_steps for e in s.end_checkpoints}
+        return [Checkpoint(name) for name in end_names]
 
     def add_user_messages(self, messages: List[UserUttered]) -> None:
         """Adds next story steps with the user's utterances.
@@ -113,10 +110,7 @@ class StoryStepBuilder:
         completed = [step for step in self.current_steps if step.end_checkpoints]
         unfinished = [step for step in self.current_steps if not step.end_checkpoints]
         self.story_steps.extend(completed)
-        if unfinished:
-            self.current_steps = unfinished
-        else:
-            self.current_steps = self._next_story_steps()
+        self.current_steps = unfinished if unfinished else self._next_story_steps()
 
     def flush(self) -> None:
         if self.current_steps:
@@ -128,14 +122,13 @@ class StoryStepBuilder:
         if not start_checkpoints:
             start_checkpoints = [Checkpoint(STORY_START)]
         step_class = RuleStep if self.is_rule else StoryStep
-        current_turns = [
+        return [
             step_class(
                 block_name=self.name,
                 start_checkpoints=start_checkpoints,
                 source_name=self.source_name,
             )
         ]
-        return current_turns
 
     def _generate_checkpoint_name_for_or_statement(self, events: List[Event]) -> str:
         """Generates a unique checkpoint name for an or statement.

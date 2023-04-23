@@ -119,11 +119,7 @@ class RestInput(InputChannel):
     ) -> Blueprint:
         """Groups the collection of endpoints used by rest channel."""
         module_type = inspect.getmodule(self)
-        if module_type is not None:
-            module_name = module_type.__name__
-        else:
-            module_name = None
-
+        module_name = module_type.__name__ if module_type is not None else None
         custom_webhook = Blueprint(
             "custom_webhook_{}".format(type(self).__name__),
             module_name,
@@ -151,30 +147,29 @@ class RestInput(InputChannel):
                     ),
                     content_type="text/event-stream",
                 )
-            else:
-                collector = CollectingOutputChannel()
-                # noinspection PyBroadException
-                try:
-                    await on_new_message(
-                        UserMessage(
-                            text,
-                            collector,
-                            sender_id,
-                            input_channel=input_channel,
-                            metadata=metadata,
-                        )
+            collector = CollectingOutputChannel()
+            # noinspection PyBroadException
+            try:
+                await on_new_message(
+                    UserMessage(
+                        text,
+                        collector,
+                        sender_id,
+                        input_channel=input_channel,
+                        metadata=metadata,
                     )
-                except CancelledError:
-                    logger.error(
-                        f"Message handling timed out for user message '{text}'.",
-                        exc_info=True,
-                    )
-                except Exception:
-                    logger.exception(
-                        f"An exception occured while handling "
-                        f"user message '{text}'."
-                    )
-                return response.json(collector.messages)
+                )
+            except CancelledError:
+                logger.error(
+                    f"Message handling timed out for user message '{text}'.",
+                    exc_info=True,
+                )
+            except Exception:
+                logger.exception(
+                    f"An exception occured while handling "
+                    f"user message '{text}'."
+                )
+            return response.json(collector.messages)
 
         return custom_webhook
 
@@ -196,7 +191,7 @@ class QueueOutputChannel(CollectingOutputChannel):
     # noinspection PyMissingConstructor
     def __init__(self, message_queue: Optional[Queue] = None) -> None:
         super().__init__()
-        self.messages = Queue() if not message_queue else message_queue
+        self.messages = message_queue if message_queue else Queue()
 
     def latest_output(self) -> NoReturn:
         raise NotImplementedError("A queue doesn't allow to peek at messages.")

@@ -51,9 +51,7 @@ def get_model_name_and_weights_from_config(
 
             if model_name not in model_class_dict:
                 raise KeyError(
-                    f"'{model_name}' not a valid model name. Choose from "
-                    f"{str(list(model_class_dict.keys()))} or create"
-                    f"a new class inheriting from this class to support your model."
+                    f"'{model_name}' not a valid model name. Choose from {list(model_class_dict.keys())} or createa new class inheriting from this class to support your model."
                 )
 
             model_weights = lmfeat_step.get("model_weights")

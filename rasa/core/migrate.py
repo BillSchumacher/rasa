@@ -128,7 +128,7 @@ def _migrate_auto_fill(
         mappings = properties.get(SLOT_MAPPINGS, [])
         if from_entity_mapping not in mappings:
             mappings.append(from_entity_mapping)
-            properties.update({SLOT_MAPPINGS: mappings})
+            properties[SLOT_MAPPINGS] = mappings
 
     if "auto_fill" in properties:
         del properties["auto_fill"]
@@ -140,7 +140,7 @@ def _migrate_custom_slots(
     slot_name: Text, properties: Dict[Text, Any]
 ) -> Dict[Text, Any]:
     if not properties.get("mappings"):
-        properties.update({"mappings": [{"type": "custom"}]})
+        properties["mappings"] = [{"type": "custom"}]
 
         rasa.shared.utils.io.raise_warning(
             f"A custom mapping was added to slot '{slot_name}'. "
@@ -174,15 +174,13 @@ def _assemble_new_domain(
     new_domain: Dict[Text, Any] = {}
     for key, value in original_content.items():
         if key == KEY_SLOTS:
-            new_domain.update({key: new_slots})
+            new_domain[key] = new_slots
         elif key == KEY_FORMS:
-            new_domain.update({key: new_forms})
+            new_domain[key] = new_forms
         elif key == "version":
-            new_domain.update(
-                {key: DoubleQuotedScalarString(LATEST_TRAINING_DATA_FORMAT_VERSION)}
-            )
+            new_domain[key] = DoubleQuotedScalarString(LATEST_TRAINING_DATA_FORMAT_VERSION)
         else:
-            new_domain.update({key: value})
+            new_domain[key] = value
     return new_domain
 
 
@@ -263,8 +261,8 @@ def _migrate_domain_files(
                 f"multiple files. "
             )
 
-        slots.update(original_content.get(KEY_SLOTS, {}))
-        forms.update(original_content.get(KEY_FORMS, {}))
+        slots |= original_content.get(KEY_SLOTS, {})
+        forms |= original_content.get(KEY_FORMS, {})
         entities.extend(original_content.get(KEY_ENTITIES, []))
 
     if not slots or not forms:
@@ -311,14 +309,7 @@ def migrate_domain_format(
         out_path = domain_parent_dir / suffix
 
     # Ensure the output location is not already in-use
-    if not migrate_file_only:
-        if out_path.is_dir() and any(out_path.iterdir()):
-            raise RasaException(
-                f"The domain could not be migrated to "
-                f"'{out_path}' because that folder is not empty."
-                "Please remove the contents of the folder and try again."
-            )
-    else:
+    if migrate_file_only:
         if out_path.is_file():
             raise RasaException(
                 f"The domain could not be migrated to "
@@ -326,6 +317,12 @@ def migrate_domain_format(
                 "Please remove the file and try again."
             )
 
+    elif out_path.is_dir() and any(out_path.iterdir()):
+        raise RasaException(
+            f"The domain could not be migrated to "
+            f"'{out_path}' because that folder is not empty."
+            "Please remove the contents of the folder and try again."
+        )
     # Sanity Check: Assert the files to be migrated aren't in 3.0 format already
     # Note: we do not enforce that the version tag is 2.0 everywhere + validate that
     # migrate-able domain files are among these files later
@@ -357,9 +354,7 @@ def migrate_domain_format(
 
     if migrated_files:
         raise RasaException(
-            f"Some of the given files ({[file for file in migrated_files]}) "
-            f"have already been migrated to Rasa 3.0 format. Please remove these "
-            f"migrated files (or replace them with files in 2.0 format) and try again."
+            f"Some of the given files ({list(migrated_files)}) have already been migrated to Rasa 3.0 format. Please remove these migrated files (or replace them with files in 2.0 format) and try again."
         )
 
     # Validate given domain file(s) and migrate them
@@ -373,14 +368,14 @@ def migrate_domain_format(
             original_domain = _migrate_domain_files(
                 domain_path, backup_location, out_path
             )
-        else:
-            if not Domain.is_domain_file(domain_path):
-                raise RasaException(
-                    f"The file '{domain_path.as_posix()}' could not be validated as a "
-                    f"domain file. Only domain yaml files can be migrated. "
-                )
+        elif Domain.is_domain_file(domain_path):
             original_domain = _create_back_up(domain_path, backup_location)
 
+        else:
+            raise RasaException(
+                f"The file '{domain_path.as_posix()}' could not be validated as a "
+                f"domain file. Only domain yaml files can be migrated. "
+            )
         new_forms, updated_slots = _migrate_form_slots(original_domain)
         new_slots = _migrate_auto_fill_and_custom_slots(original_domain, updated_slots)
 

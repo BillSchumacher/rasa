@@ -414,7 +414,7 @@ async def test_train_with_retrieval_events_success(
         # Read in as dictionaries to avoid that keys, which are specified in
         # multiple files (such as 'version'), clash.
         content = rasa.shared.utils.io.read_yaml_file(file)
-        payload.update(content)
+        payload |= content
 
         concatenated_payload_file = tmp_path / "concatenated.yml"
         rasa.shared.utils.io.write_yaml(payload, concatenated_payload_file)
@@ -1515,9 +1515,8 @@ async def test_load_model_from_model_server(
     endpoint = EndpointConfig("https://example.com/model/trained_core_model")
     with open(trained_core_model, "rb") as f:
         with aioresponses(passthrough=["http://127.0.0.1"]) as mocked:
-            headers = {}
             fs = os.fstat(f.fileno())
-            headers["Content-Length"] = str(fs[6])
+            headers = {"Content-Length": str(fs[6])}
             mocked.get(
                 "https://example.com/model/trained_core_model",
                 content_type="application/x-tar",
@@ -2043,7 +2042,6 @@ async def test_update_conversation_with_events(
 ):
     conversation_id = "some-conversation-ID"
     agent = rasa_app.sanic_app.ctx.agent
-    tracker_store = agent.tracker_store
     domain = agent.domain
     model_id = agent.model_id
     assistant_id = agent.processor.model_metadata.assistant_id
@@ -2051,6 +2049,7 @@ async def test_update_conversation_with_events(
     if initial_tracker_events:
         tracker = await agent.processor.get_tracker(conversation_id)
         tracker.update_with_events(initial_tracker_events, domain)
+        tracker_store = agent.tracker_store
         await tracker_store.save(tracker)
 
     fetched_tracker = await rasa.server.update_conversation_with_events(

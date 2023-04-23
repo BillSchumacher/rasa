@@ -77,16 +77,18 @@ def create_action_fingerprints(
     action_fingerprints: Dict[Text, ActionFingerprint] = {}
     for action_name, events_after_action in events_after_actions.items():
         slots = list(
-            set(
-                event.key for event in events_after_action if isinstance(event, SlotSet)
-            ).intersection(featurized_slots)
+            {
+                event.key
+                for event in events_after_action
+                if isinstance(event, SlotSet)
+            }.intersection(featurized_slots)
         )
         active_loops = list(
-            set(
+            {
                 event.name
                 for event in events_after_action
                 if isinstance(event, ActiveLoop)
-            )
+            }
         )
         action_fingerprints[action_name] = ActionFingerprint(slots, active_loops)
 

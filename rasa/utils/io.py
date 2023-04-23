@@ -66,7 +66,7 @@ def enable_async_loop_debugging(
                                 alerted as slow.
     """
     logging.info(
-        "Enabling coroutine debugging. Loop id {}.".format(id(asyncio.get_event_loop()))
+        f"Enabling coroutine debugging. Loop id {id(asyncio.get_event_loop())}."
     )
 
     # Enable debugging
@@ -139,7 +139,7 @@ def file_type_validator(
 
     def is_valid(path: Text) -> bool:
         return path is not None and any(
-            [path.endswith(file_type) for file_type in valid_file_types]
+            path.endswith(file_type) for file_type in valid_file_types
         )
 
     return create_validator(is_valid, error_message)

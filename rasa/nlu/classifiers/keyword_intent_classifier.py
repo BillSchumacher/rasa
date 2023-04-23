@@ -75,12 +75,8 @@ class KeywordIntentClassifier(GraphComponent, IntentClassifier):
             ):
                 duplicate_examples.add(ex.get(TEXT))
                 rasa.shared.utils.io.raise_warning(
-                    f"Keyword '{ex.get(TEXT)}' is a keyword to trigger intent "
-                    f"'{self.intent_keyword_map[ex.get(TEXT)]}' and also "
-                    f"intent '{ex.get(INTENT)}', it will be removed "
-                    f"from the list of keywords for both of them. "
-                    f"Remove (one of) the duplicates from the training data.",
-                    docs=DOCS_URL_COMPONENTS + "#keyword-intent-classifier",
+                    f"Keyword '{ex.get(TEXT)}' is a keyword to trigger intent '{self.intent_keyword_map[ex.get(TEXT)]}' and also intent '{ex.get(INTENT)}', it will be removed from the list of keywords for both of them. Remove (one of) the duplicates from the training data.",
+                    docs=f"{DOCS_URL_COMPONENTS}#keyword-intent-classifier",
                 )
             else:
                 self.intent_keyword_map[ex.get(TEXT)] = ex.get(INTENT)
@@ -107,13 +103,8 @@ class KeywordIntentClassifier(GraphComponent, IntentClassifier):
                 ):
                     ambiguous_mappings.append((intent1, keyword1))
                     rasa.shared.utils.io.raise_warning(
-                        f"Keyword '{keyword1}' is a keyword of intent '{intent1}', "
-                        f"but also a substring of '{keyword2}', which is a "
-                        f"keyword of intent '{intent2}."
-                        f" '{keyword1}' will be removed from the list of keywords.\n"
-                        f"Remove (one of) the conflicting keywords from the"
-                        f" training data.",
-                        docs=DOCS_URL_COMPONENTS + "#keyword-intent-classifier",
+                        f"Keyword '{keyword1}' is a keyword of intent '{intent1}', but also a substring of '{keyword2}', which is a keyword of intent '{intent2}. '{keyword1}' will be removed from the list of keywords.\nRemove (one of) the conflicting keywords from the training data.",
+                        docs=f"{DOCS_URL_COMPONENTS}#keyword-intent-classifier",
                     )
         for intent, keyword in ambiguous_mappings:
             self.intent_keyword_map.pop(keyword)

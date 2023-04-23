@@ -67,8 +67,7 @@ class CallbackNaturalLanguageGenerator(NaturalLanguageGenerator):
         body = nlg_request_format(utter_action, tracker, output_channel, **kwargs)
 
         logger.debug(
-            "Requesting NLG for {} from {}."
-            "".format(utter_action, self.nlg_endpoint.url)
+            f"Requesting NLG for {utter_action} from {self.nlg_endpoint.url}."
         )
 
         response = await self.nlg_endpoint.request(
@@ -87,12 +86,10 @@ class CallbackNaturalLanguageGenerator(NaturalLanguageGenerator):
         from jsonschema import ValidationError
 
         try:
-            if content is None or content == "":
-                # means the endpoint did not want to respond with anything
-                return True
-            else:
+            if content is not None and content != "":
                 validate(content, nlg_response_format_spec())
-                return True
+            # means the endpoint did not want to respond with anything
+            return True
         except ValidationError as e:
             raise RasaException(
                 f"{e.message}. Failed to validate NLG response from API, make sure "

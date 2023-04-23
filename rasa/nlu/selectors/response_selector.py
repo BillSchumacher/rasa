@@ -335,10 +335,7 @@ class ResponseSelector(DIETClassifier):
         use_text_as_label: bool,
     ) -> Type[RasaModel]:
         """Returns model class."""
-        if use_text_as_label:
-            return DIET2DIET
-        else:
-            return DIET2BOW
+        return DIET2DIET if use_text_as_label else DIET2BOW
 
     def _load_selector_params(self) -> None:
         self.retrieval_intent = self.component_config[RETRIEVAL_INTENT]

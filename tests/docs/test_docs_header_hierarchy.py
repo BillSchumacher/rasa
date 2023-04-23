@@ -19,17 +19,11 @@ def get_heading(heading: Text) -> Text:
 
 
 def line_opens_code_block(line: Text) -> bool:
-    for open_tag in CODE_BLOCK_OPEN:
-        if line.startswith(open_tag):
-            return True
-    return False
+    return any(line.startswith(open_tag) for open_tag in CODE_BLOCK_OPEN)
 
 
 def line_closes_code_block(line: Text) -> bool:
-    for close_tag in CODE_BLOCK_CLOSE:
-        if line.endswith(close_tag):
-            return True
-    return False
+    return any(line.endswith(close_tag) for close_tag in CODE_BLOCK_CLOSE)
 
 
 @pytest.mark.parametrize("mdx_file_path", MDX_DOCS_FILES)

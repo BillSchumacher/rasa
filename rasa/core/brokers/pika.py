@@ -185,12 +185,10 @@ class PikaEventBroker(EventBroker):
                     ssl=ssl_options is not None,
                     ssl_options=ssl_options,
                 )
-            # All sorts of exception can happen until RabbitMQ is in a stable state
             except Exception as e:
                 last_exception = e
                 logger.debug(
-                    f"Connecting to '{self.host}' failed with error '{e}'. "
-                    f"Trying again."
+                    f"Connecting to '{self.host}' failed with error '{last_exception}'. Trying again."
                 )
                 await asyncio.sleep(self._retry_delay_in_seconds)
 
@@ -246,10 +244,7 @@ class PikaEventBroker(EventBroker):
 
     def is_ready(self) -> bool:
         """Return `True` if a connection was established."""
-        if self._connection is None:
-            return False
-
-        return not self._connection.is_closed
+        return False if self._connection is None else not self._connection.is_closed
 
     def publish(
         self, event: Dict[Text, Any], headers: Optional[Dict[Text, Text]] = None

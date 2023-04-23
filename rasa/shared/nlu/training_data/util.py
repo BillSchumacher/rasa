@@ -206,7 +206,7 @@ def build_entity(
     if group:
         entity[ENTITY_ATTRIBUTE_GROUP] = group
 
-    entity.update(kwargs)
+    entity |= kwargs
     return entity
 
 

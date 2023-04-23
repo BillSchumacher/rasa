@@ -211,7 +211,7 @@ def test_crf_use_dense_features(
     if dense_features:
         dense_features = dense_features.features
 
-    for i in range(0, len(dense_features[0])):
+    for i in range(len(dense_features[0])):
         assert (
             features[0]["0:text_dense_features"]["text_dense_features"][str(i)]
             == dense_features[0][i]

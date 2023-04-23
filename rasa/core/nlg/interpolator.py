@@ -25,15 +25,7 @@ def interpolate_text(response: Text, values: Dict[Text, Text]) -> Text:
     try:
         text = re.sub(r"{([^\n{}]+?)}", r"{0[\1]}", response)
         text = text.format(values)
-        if "0[" in text:
-            # regex replaced tag but format did not replace
-            # likely cause would be that tag name was enclosed
-            # in double curly and format func simply escaped it.
-            # we don't want to return {0[SLOTNAME]} thus
-            # restoring original value with { being escaped.
-            return response.format({})
-
-        return text
+        return response.format({}) if "0[" in text else text
     except KeyError as e:
         logger.exception(
             f"Failed to replace placeholders in response '{response}'. "

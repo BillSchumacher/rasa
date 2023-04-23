@@ -167,13 +167,9 @@ def find_story_conflicts(
         trackers, domain, max_history
     )
 
-    # Iterate once more over all states and note the (unhashed) state,
-    # for which a conflict occurs
-    conflicts = _build_conflicts_from_states(
+    return _build_conflicts_from_states(
         trackers, domain, max_history, conflicting_state_action_mapping
     )
-
-    return conflicts
 
 
 def _find_conflicting_states(

@@ -191,10 +191,7 @@ class RegexFeaturizer(SparseFeaturizer, GraphComponent):
             # nothing to featurize
             return None, None
 
-        flags = 0  # default flag
-        if not self.case_sensitive:
-            flags = re.IGNORECASE
-
+        flags = 0 if self.case_sensitive else re.IGNORECASE
         sequence_length = len(tokens)
 
         num_patterns = len(self.known_patterns)

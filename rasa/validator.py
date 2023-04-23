@@ -201,11 +201,8 @@ class Validator:
 
                 if event.action_name not in utterance_actions:
                     rasa.shared.utils.io.raise_warning(
-                        f"The action '{event.action_name}' is used in the stories, "
-                        f"but is not a valid utterance action. Please make sure "
-                        f"the action is listed in your domain and there is a "
-                        f"template defined with its name.",
-                        docs=DOCS_URL_ACTIONS + "#utterance-actions",
+                        f"The action '{event.action_name}' is used in the stories, but is not a valid utterance action. Please make sure the action is listed in your domain and there is a template defined with its name.",
+                        docs=f"{DOCS_URL_ACTIONS}#utterance-actions",
                     )
                     everything_is_alright = ignore_warnings
                 stories_utterances.add(event.action_name)
@@ -345,14 +342,13 @@ class Validator:
             for slot in form_slots:
                 if slot in domain_slot_names:
                     continue
-                else:
-                    rasa.shared.utils.io.raise_warning(
-                        f"The form slot '{slot}' in form '{form}' "
-                        f"is not present in the domain slots."
-                        f"Please add the correct slot or check for typos.",
-                        docs=DOCS_URL_DOMAINS,
-                    )
-                    everything_is_alright = False
+                rasa.shared.utils.io.raise_warning(
+                    f"The form slot '{slot}' in form '{form}' "
+                    f"is not present in the domain slots."
+                    f"Please add the correct slot or check for typos.",
+                    docs=DOCS_URL_DOMAINS,
+                )
+                everything_is_alright = False
 
         return everything_is_alright
 

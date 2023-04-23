@@ -57,23 +57,29 @@ class Token:
         return self.data.get(prop, default)
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Token):
-            return NotImplemented
-        return (self.start, self.end, self.text, self.lemma) == (
-            other.start,
-            other.end,
-            other.text,
-            other.lemma,
+        return (
+            (self.start, self.end, self.text, self.lemma)
+            == (
+                other.start,
+                other.end,
+                other.text,
+                other.lemma,
+            )
+            if isinstance(other, Token)
+            else NotImplemented
         )
 
     def __lt__(self, other: Any) -> bool:
-        if not isinstance(other, Token):
-            return NotImplemented
-        return (self.start, self.end, self.text, self.lemma) < (
-            other.start,
-            other.end,
-            other.text,
-            other.lemma,
+        return (
+            (self.start, self.end, self.text, self.lemma)
+            < (
+                other.start,
+                other.end,
+                other.text,
+                other.lemma,
+            )
+            if isinstance(other, Token)
+            else NotImplemented
         )
 
     def __repr__(self) -> Text:
@@ -97,10 +103,8 @@ class Tokenizer(GraphComponent, abc.ABC):
         self.intent_tokenization_flag = config["intent_tokenization_flag"]
         # split symbol for intents
         self.intent_split_symbol = config["intent_split_symbol"]
-        # token pattern to further split tokens
-        token_pattern = config.get("token_pattern")
         self.token_pattern_regex = None
-        if token_pattern:
+        if token_pattern := config.get("token_pattern"):
             self.token_pattern_regex = re.compile(token_pattern)
 
     @classmethod
@@ -125,7 +129,7 @@ class Tokenizer(GraphComponent, abc.ABC):
             for attribute in MESSAGE_ATTRIBUTES:
                 if (
                     example.get(attribute) is not None
-                    and not example.get(attribute) == ""
+                    and example.get(attribute) != ""
                 ):
                     if attribute in [INTENT, ACTION_NAME, INTENT_RESPONSE_KEY]:
                         tokens = self._split_name(example, attribute)
@@ -152,13 +156,11 @@ class Tokenizer(GraphComponent, abc.ABC):
         return messages
 
     def _tokenize_on_split_symbol(self, text: Text) -> List[Text]:
-        words = (
+        return (
             text.split(self.intent_split_symbol)
             if self.intent_tokenization_flag
             else [text]
         )
-
-        return words
 
     def _split_name(self, message: Message, attribute: Text = INTENT) -> List[Token]:
         text = message.get(attribute)

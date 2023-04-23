@@ -186,10 +186,10 @@ class DefaultV1Recipe(Recipe):
     ) -> GraphModelConfiguration:
         """Converts the default config to graphs (see interface for full docstring)."""
         self._use_core = (
-            bool(config.get("policies")) and not training_type == TrainingType.NLU
+            bool(config.get("policies")) and training_type != TrainingType.NLU
         )
         self._use_nlu = (
-            bool(config.get("pipeline")) and not training_type == TrainingType.CORE
+            bool(config.get("pipeline")) and training_type != TrainingType.CORE
         )
 
         if not self._use_nlu and training_type == TrainingType.NLU:
@@ -507,15 +507,14 @@ class DefaultV1Recipe(Recipe):
         if not component.model_from:
             return {}
 
-        node_name_of_provider = next(
+        if node_name_of_provider := next(
             (
                 node_name
                 for node_name, node in nodes.items()
                 if node.uses.__name__ == component.model_from
             ),
             None,
-        )
-        if node_name_of_provider:
+        ):
             model_provider_needs["model"] = node_name_of_provider
 
         return model_provider_needs
@@ -657,18 +656,17 @@ class DefaultV1Recipe(Recipe):
     ) -> Dict[Text, SchemaNode]:
 
         predict_config = copy.deepcopy(config)
-        predict_nodes = {}
-
         from rasa.nlu.classifiers.regex_message_handler import RegexMessageHandler
 
-        predict_nodes["nlu_message_converter"] = SchemaNode(
-            **DEFAULT_PREDICT_KWARGS,
-            needs={"messages": PLACEHOLDER_MESSAGE},
-            uses=NLUMessageConverter,
-            fn="convert_user_message",
-            config={},
-        )
-
+        predict_nodes = {
+            "nlu_message_converter": SchemaNode(
+                **DEFAULT_PREDICT_KWARGS,
+                needs={"messages": PLACEHOLDER_MESSAGE},
+                uses=NLUMessageConverter,
+                fn="convert_user_message",
+                config={}
+            )
+        }
         last_run_nlu_node = "nlu_message_converter"
 
         if self._use_nlu:

@@ -222,7 +222,7 @@ def test_train_dry_run_failure(run_in_simple_project: Callable[..., RunResult]):
     temp_dir = os.getcwd()
 
     domain = (
-        "version: '" + LATEST_TRAINING_DATA_FORMAT_VERSION + "'\n"
+        f"version: '{LATEST_TRAINING_DATA_FORMAT_VERSION}" + "'\n"
         "session_config:\n"
         "  session_expiration_time: 60\n"
         "  carry_over_slots_to_new_session: true\n"
@@ -236,7 +236,7 @@ def test_train_dry_run_failure(run_in_simple_project: Callable[..., RunResult]):
 
     output = run_in_simple_project("train", "--dry-run")
 
-    assert not any([s for s in output.outlines if "No training required." in s])
+    assert not any(s for s in output.outlines if "No training required." in s)
     assert (output.ret & CODE_NEEDS_TO_BE_RETRAINED == CODE_NEEDS_TO_BE_RETRAINED) and (
         output.ret & CODE_FORCED_TRAINING != CODE_FORCED_TRAINING
     )

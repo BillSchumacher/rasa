@@ -221,12 +221,11 @@ class GraphTrainer:
         if isinstance(fingerprint_run_output, FingerprintStatus):
             # If there is a fingerprint key hit we can potentially use a cached output.
             if fingerprint_run_output.is_hit:
-                output_result = self._cache.get_cached_result(
+                if output_result := self._cache.get_cached_result(
                     output_fingerprint_key=fingerprint_run_output.output_fingerprint,
                     node_name=current_node_name,
                     model_storage=self._model_storage,
-                )
-                if output_result:
+                ):
                     logger.debug(
                         f"Updating '{current_node_name}' to use a "
                         f"'{PrecomputedValueProvider.__name__}'."
@@ -240,7 +239,6 @@ class GraphTrainer:
                     # up as an ancestor of a target node.
                     fingerprint_run_output.is_hit = False
 
-        # Else the node was an input node and the output is the actual node's output.
         else:
             # As fingerprint_run_output is just the node's output there is no need to
             # execute the node again. We can just return it from a

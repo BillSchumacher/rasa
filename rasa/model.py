@@ -37,12 +37,12 @@ def get_local_model(model_path: Text = DEFAULT_MODELS_PATH) -> Text:
         raise ModelNotFound(f"No file or directory at '{model_path}'.")
 
     if os.path.isdir(model_path):
-        file_model_path = get_latest_model(model_path)
-        if not file_model_path:
+        if file_model_path := get_latest_model(model_path):
+            model_path = file_model_path
+        else:
             raise ModelNotFound(
                 f"Could not find any Rasa model files in '{model_path}'."
             )
-        model_path = file_model_path
     elif not model_path.endswith(".tar.gz"):
         raise ModelNotFound(f"Path '{model_path}' does not point to a Rasa model file.")
 
@@ -67,10 +67,7 @@ def get_latest_model(model_path: Text = DEFAULT_MODELS_PATH) -> Optional[Text]:
 
     list_of_files = glob.glob(os.path.join(model_path, "*.tar.gz"))
 
-    if len(list_of_files) == 0:
-        return None
-
-    return max(list_of_files, key=os.path.getctime)
+    return max(list_of_files, key=os.path.getctime) if list_of_files else None
 
 
 def get_model_for_finetuning(

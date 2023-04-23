@@ -61,10 +61,9 @@ class TestUnexpecTEDIntentPolicy(TestTEDPolicy):
 
     @pytest.fixture(scope="class")
     def featurizer(self) -> TrackerFeaturizer:
-        featurizer = IntentMaxHistoryTrackerFeaturizer(
+        return IntentMaxHistoryTrackerFeaturizer(
             IntentTokenizerSingleStateFeaturizer(), max_history=self.max_history
         )
-        return featurizer
 
     @staticmethod
     def persist_and_load_policy(
@@ -886,8 +885,7 @@ class TestUnexpecTEDIntentPolicy(TestTEDPolicy):
 
         # Check if ranking is sorted correctly and truncated to `ranking_length`
         sorted_label_similarities = sorted(
-            [(index, score) for index, score in enumerate(similarities[0])],
-            key=lambda x: -x[1],
+            list(enumerate(similarities[0])), key=lambda x: -x[1]
         )
         sorted_label_similarities = (
             sorted_label_similarities[:ranking_length]

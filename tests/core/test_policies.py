@@ -106,10 +106,9 @@ class PolicyTestCollection:
 
     @pytest.fixture(scope="class")
     def featurizer(self) -> TrackerFeaturizer:
-        featurizer = MaxHistoryTrackerFeaturizer(
+        return MaxHistoryTrackerFeaturizer(
             SingleStateFeaturizer(), max_history=self.max_history
         )
-        return featurizer
 
     @pytest.fixture(scope="class")
     def default_domain(self, domain_path: Text) -> Domain:
@@ -344,8 +343,7 @@ class TestMemoizationPolicy(PolicyTestCollection):
 
     @pytest.fixture(scope="class")
     def featurizer(self) -> TrackerFeaturizer:
-        featurizer = MaxHistoryTrackerFeaturizer(None, max_history=self.max_history)
-        return featurizer
+        return MaxHistoryTrackerFeaturizer(None, max_history=self.max_history)
 
     def test_featurizer(
         self,
@@ -393,7 +391,7 @@ class TestMemoizationPolicy(PolicyTestCollection):
             assert recalled == actions[0]
 
         nums = np.random.randn(default_domain.num_states)
-        random_states = [{f: num for f, num in zip(default_domain.input_states, nums)}]
+        random_states = [dict(zip(default_domain.input_states, nums))]
         assert trained_policy._recall_states(random_states) is None
 
         # compare augmentation for augmentation_factor of 0 and 20:
@@ -920,7 +918,7 @@ class TestAugmentedMemoizationPolicy(TestMemoizationPolicy):
             test_story2_no_match_expected,
             domain,
         )
-        assert all([prob == 0.0 for prob in prediction2.probabilities])
+        assert all(prob == 0.0 for prob in prediction2.probabilities)
 
     @pytest.mark.parametrize("max_history", [1, 2, 3, 4, None])
     def test_aug_pred_without_intent(

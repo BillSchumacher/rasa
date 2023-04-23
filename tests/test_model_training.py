@@ -176,9 +176,9 @@ def test_train_nlu_with_responses_and_domain_no_warns(tmp_path: Path):
             domain=domain_path,
         )
 
-    assert not any(
+    assert all(
         "You either need to add a response phrase or correct the intent"
-        in record.message.args[0]
+        not in record.message.args[0]
         for record in records
     )
 
@@ -255,7 +255,7 @@ def test_train_nlu_autoconfig(
 
 
 def new_model_path_in_same_dir(old_model_path: Text) -> Text:
-    return str(Path(old_model_path).parent / (secrets.token_hex(8) + ".tar.gz"))
+    return str(Path(old_model_path).parent / f"{secrets.token_hex(8)}.tar.gz")
 
 
 class TestE2e:
@@ -278,10 +278,8 @@ class TestE2e:
             )
 
         assert any(
-            [
-                "The end-to-end training is currently experimental" in record.message
-                for record in caplog.records
-            ]
+            "The end-to-end training is currently experimental" in record.message
+            for record in caplog.records
         )
 
     def test_models_not_retrained_if_no_new_data(

@@ -87,8 +87,7 @@ def read_lookup_table_file(lookup_table_file: Text) -> List[Text]:
     elements_to_regex = []
     with f:
         for line in f:
-            new_element = line.strip()
-            if new_element:
+            if new_element := line.strip():
                 elements_to_regex.append(new_element)
     return elements_to_regex
 
@@ -106,14 +105,15 @@ def _collect_regex_features(
     Returns:
         Regex features.
     """
-    if not use_only_entities:
-        return training_data.regex_features
-
-    return [
-        regex
-        for regex in training_data.regex_features
-        if regex["name"] in training_data.entities
-    ]
+    return (
+        [
+            regex
+            for regex in training_data.regex_features
+            if regex["name"] in training_data.entities
+        ]
+        if use_only_entities
+        else training_data.regex_features
+    )
 
 
 def extract_patterns(

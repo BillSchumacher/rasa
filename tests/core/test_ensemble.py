@@ -175,9 +175,9 @@ def test_default_combine_predictions(
         ]
 
     # expected events
-    expected_events = set(
+    expected_events = {
         event for prediction in predictions for event in prediction.events
-    )
+    }
     expected_events.update(predictions[expected_winner_idx].optional_events)
     if last_action_was_action_listen:
         expected_events.add(

@@ -47,8 +47,7 @@ class RasaFileImporter(TrainingDataImporter):
             logger.debug("No configuration file was provided to the RasaFileImporter.")
             return {}
 
-        config = rasa.shared.utils.io.read_model_configuration(self.config_file)
-        return config
+        return rasa.shared.utils.io.read_model_configuration(self.config_file)
 
     @rasa.shared.utils.common.cached_method
     def get_config_file_for_auto_config(self) -> Optional[Text]:

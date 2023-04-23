@@ -196,7 +196,7 @@ def test_tracker_write_to_story(tmp_path: Path, moodbot_domain: Domain):
 
 async def test_tracker_state_regression_without_bot_utterance(default_agent: Agent):
     sender_id = "test_tracker_state_regression_without_bot_utterance"
-    for i in range(0, 2):
+    for _ in range(2):
         await default_agent.handle_text("/greet", sender_id=sender_id)
     tracker = await default_agent.tracker_store.get_or_create_tracker(sender_id)
 
@@ -214,7 +214,7 @@ async def test_tracker_state_regression_without_bot_utterance(default_agent: Age
 
 async def test_tracker_state_regression_with_bot_utterance(default_agent: Agent):
     sender_id = "test_tracker_state_regression_with_bot_utterance"
-    for i in range(0, 2):
+    for _ in range(2):
         await default_agent.handle_text("/greet", sender_id=sender_id)
     tracker = await default_agent.tracker_store.get_or_create_tracker(sender_id)
 
@@ -312,7 +312,7 @@ def test_get_latest_entity_values(
     tracker = DialogueStateTracker("default", domain.slots)
     # the retrieved tracker should be empty
     assert len(tracker.events) == 0
-    assert list(tracker.get_latest_entity_values(entity_type)) == []
+    assert not list(tracker.get_latest_entity_values(entity_type))
 
     intent = {"name": "greet", PREDICTED_CONFIDENCE_KEY: 1.0}
     tracker.update(UserUttered("/greet", intent, entities))
@@ -325,7 +325,7 @@ def test_get_latest_entity_values(
         )
         == expected_values
     )
-    assert list(tracker.get_latest_entity_values("unknown")) == []
+    assert not list(tracker.get_latest_entity_values("unknown"))
 
 
 async def test_tracker_update_slots_with_entity(domain: Domain):

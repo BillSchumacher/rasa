@@ -102,19 +102,11 @@ class EntityExtractorMixin(abc.ABC):
         ends = [token.end for token in tokens]
 
         if entity[ENTITY_ATTRIBUTE_START] not in offsets:
-            message = (
-                "Invalid entity {} in example '{}': "
-                "entities must span whole tokens. "
-                "Wrong entity start.".format(entity, text)
-            )
+            message = f"Invalid entity {entity} in example '{text}': entities must span whole tokens. Wrong entity start."
             raise ValueError(message)
 
         if entity[ENTITY_ATTRIBUTE_END] not in ends:
-            message = (
-                "Invalid entity {} in example '{}': "
-                "entities must span whole tokens. "
-                "Wrong entity end.".format(entity, text)
-            )
+            message = f"Invalid entity {entity} in example '{text}': entities must span whole tokens. Wrong entity end."
             raise ValueError(message)
 
         start = offsets.index(entity[ENTITY_ATTRIBUTE_START])
@@ -336,9 +328,7 @@ class EntityExtractorMixin(abc.ABC):
         interleaving_text = text[last_token_end : token.start]
         tokens_separated_by_allowed_chars = all(
             filter(
-                lambda char: True
-                if char in SINGLE_ENTITY_ALLOWED_INTERLEAVING_CHARSET
-                else False,
+                lambda char: char in SINGLE_ENTITY_ALLOWED_INTERLEAVING_CHARSET,
                 interleaving_text,
             )
         )
@@ -367,9 +357,7 @@ class EntityExtractorMixin(abc.ABC):
         Returns:
             The tag value.
         """
-        if tag_name in tags:
-            return tags[tag_name][idx]
-        return NO_ENTITY_TAG
+        return tags[tag_name][idx] if tag_name in tags else NO_ENTITY_TAG
 
     @staticmethod
     def _create_new_entity(

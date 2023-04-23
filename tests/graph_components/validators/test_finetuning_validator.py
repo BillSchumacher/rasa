@@ -45,15 +45,12 @@ def get_finetuning_validator(
     default_resource: Resource,
 ) -> Callable[[bool, bool, Dict[Text, Any], GraphSchema], FinetuningValidator]:
     def inner(
-        finetuning: bool,
-        load: bool,
-        config: Dict[Text, Any],
-        graph_schema: Optional[GraphSchema] = None,
-    ) -> FinetuningValidator:
-        if load:
-            constructor = FinetuningValidator.load
-        else:
-            constructor = FinetuningValidator.create
+            finetuning: bool,
+            load: bool,
+            config: Dict[Text, Any],
+            graph_schema: Optional[GraphSchema] = None,
+        ) -> FinetuningValidator:
+        constructor = FinetuningValidator.load if load else FinetuningValidator.create
         if finetuning:
             default_execution_context.is_finetuning = finetuning
         if graph_schema is not None:

@@ -193,7 +193,7 @@ def test_featurize_trackers_with_full_dialogue_tracker_featurizer(
         assert np.all(actual == expected)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 def test_trackers_ignore_action_unlikely_intent_with_full_dialogue_tracker_featurizer(
@@ -262,7 +262,7 @@ def test_trackers_ignore_action_unlikely_intent_with_full_dialogue_tracker_featu
         assert np.all(actual == expected)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 def test_trackers_keep_action_unlikely_intent_with_full_dialogue_tracker_featurizer(
@@ -331,7 +331,7 @@ def test_trackers_keep_action_unlikely_intent_with_full_dialogue_tracker_featuri
         assert np.all(actual == expected)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 def test_create_state_features_full_dialogue_tracker_featurizer(
@@ -839,7 +839,7 @@ def test_featurize_trackers_with_max_history_tracker_featurizer(
     assert np.all(actual_labels == expected_labels)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 @pytest.mark.parametrize("max_history", [None, 2])
@@ -905,7 +905,7 @@ def test_featurize_trackers_ignore_action_unlikely_intent_max_history_featurizer
         assert np.all(actual == expected)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 @pytest.mark.parametrize("max_history", [None, 2])
@@ -978,7 +978,7 @@ def test_featurize_trackers_keep_action_unlikely_intent_max_history_featurizer(
         assert np.all(actual == expected)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 @pytest.mark.parametrize(
@@ -1080,7 +1080,7 @@ def test_deduplicate_featurize_trackers_with_max_history_tracker_featurizer(
     if max_history is not None:
         expected_features = [x[-max_history:] for x in expected_features]
     if not remove_duplicates:
-        expected_features = expected_features * 2
+        expected_features *= 2
 
     assert actual_features is not None
     assert len(actual_features) == len(expected_features)
@@ -1097,7 +1097,7 @@ def test_deduplicate_featurize_trackers_with_max_history_tracker_featurizer(
     assert np.all(actual_labels == expected_labels)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 @pytest.mark.parametrize("max_history", [None, 2])
@@ -1613,7 +1613,7 @@ def test_featurize_trackers_with_intent_max_history_tracker_featurizer(
     assert np.all(actual_labels == expected_labels)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 @pytest.mark.parametrize(
@@ -1680,7 +1680,7 @@ def test_trackers_ignore_action_unlikely_intent_intent_max_history_featurizer(
         assert np.all(actual == expected)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 @pytest.mark.parametrize(
@@ -1746,7 +1746,7 @@ def test_trackers_keep_action_unlikely_intent_intent_max_history_featurizer(
         assert np.all(actual == expected)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 @pytest.mark.parametrize(
@@ -1805,7 +1805,7 @@ def test_deduplicate_featurize_trackers_with_intent_max_history_tracker_featuriz
     if max_history is not None:
         expected_features = [x[-max_history:] for x in expected_features]
     if not remove_duplicates:
-        expected_features = expected_features * 2
+        expected_features *= 2
 
     assert actual_features is not None
     assert len(actual_features) == len(expected_features)
@@ -1822,7 +1822,7 @@ def test_deduplicate_featurize_trackers_with_intent_max_history_tracker_featuriz
     assert np.all(actual_labels == expected_labels)
 
     # moodbot doesn't contain e2e entities
-    assert not any([any(turn_tags) for turn_tags in entity_tags])
+    assert not any(any(turn_tags) for turn_tags in entity_tags)
 
 
 @pytest.mark.parametrize(

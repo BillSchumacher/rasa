@@ -171,7 +171,7 @@ async def test_testing_does_not_warn_if_intent_in_domain(
             Path(stories_path), default_agent, out_directory=str(tmp_path)
         )
 
-    assert not any("Found intent" in r.message.args[0] for r in record)
+    assert all("Found intent" not in r.message.args[0] for r in record)
     assert all(
         "in stories which is not part of the domain" not in r.message.args[0]
         for r in record

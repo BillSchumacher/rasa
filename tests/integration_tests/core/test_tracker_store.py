@@ -128,10 +128,9 @@ def test_sql_tracker_store_with_login_db_race_condition(
 
     # IntegrityError has been caught and we log the error
     assert any(
-        [
-            f"Could not create database '{POSTGRES_TRACKER_STORE_DB}'" in record.message
-            for record in caplog.records
-        ]
+        f"Could not create database '{POSTGRES_TRACKER_STORE_DB}'"
+        in record.message
+        for record in caplog.records
     )
     matching_rows = (
         postgres_login_db_connection.execution_options(isolation_level="AUTOCOMMIT")

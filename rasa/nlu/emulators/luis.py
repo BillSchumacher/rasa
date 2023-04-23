@@ -32,10 +32,11 @@ class LUISEmulator(Emulator):
             }
 
         top = data.get(INTENT)
-        if not top:
-            return {}
-
-        return {top[INTENT_NAME_KEY]: {"score": top[PREDICTED_CONFIDENCE_KEY]}}
+        return (
+            {top[INTENT_NAME_KEY]: {"score": top[PREDICTED_CONFIDENCE_KEY]}}
+            if top
+            else {}
+        )
 
     def _entities(self, data: Dict[Text, Any]) -> Dict[Text, Any]:
         if ENTITIES not in data:

@@ -84,10 +84,7 @@ class TemplatedNaturalLanguageGenerator(NaturalLanguageGenerator):
         if default_channel:
             return default_channel
 
-        if conditional_no_channel:
-            return conditional_no_channel
-
-        return default_no_channel
+        return conditional_no_channel if conditional_no_channel else default_no_channel
 
     # noinspection PyUnusedLocal
     def _random_response_for(
@@ -101,14 +98,11 @@ class TemplatedNaturalLanguageGenerator(NaturalLanguageGenerator):
         import numpy as np
 
         if utter_action in self.responses:
-            suitable_responses = self._responses_for_utter_action(
+            if suitable_responses := self._responses_for_utter_action(
                 utter_action, output_channel, filled_slots
-            )
-
-            if suitable_responses:
+            ):
                 selected_response = np.random.choice(suitable_responses)
-                condition = selected_response.get(RESPONSE_CONDITION)
-                if condition:
+                if condition := selected_response.get(RESPONSE_CONDITION):
                     formatted_response_conditions = self._format_response_conditions(
                         condition
                     )
@@ -148,10 +142,7 @@ class TemplatedNaturalLanguageGenerator(NaturalLanguageGenerator):
             self._random_response_for(utter_action, output_channel, filled_slots)
         )
         # Filling the slots in the response with placeholders and returning the response
-        if r is not None:
-            return self._fill_response(r, filled_slots, **kwargs)
-        else:
-            return None
+        return None if r is None else self._fill_response(r, filled_slots, **kwargs)
 
     def _fill_response(
         self,
@@ -160,18 +151,15 @@ class TemplatedNaturalLanguageGenerator(NaturalLanguageGenerator):
         **kwargs: Any,
     ) -> Dict[Text, Any]:
         """Combine slot values and key word arguments to fill responses."""
-        # Getting the slot values in the response variables
-        response_vars = self._response_variables(filled_slots, kwargs)
-
-        keys_to_interpolate = [
-            "text",
-            "image",
-            "custom",
-            "buttons",
-            "attachment",
-            "quick_replies",
-        ]
-        if response_vars:
+        if response_vars := self._response_variables(filled_slots, kwargs):
+            keys_to_interpolate = [
+                "text",
+                "image",
+                "custom",
+                "buttons",
+                "attachment",
+                "quick_replies",
+            ]
             for key in keys_to_interpolate:
                 if key in response:
                     response[key] = interpolator.interpolate(
@@ -187,20 +175,17 @@ class TemplatedNaturalLanguageGenerator(NaturalLanguageGenerator):
         if filled_slots is None:
             filled_slots = {}
 
-        # Copying the filled slots in the response variables.
-        response_vars = filled_slots.copy()
-        response_vars.update(kwargs)
-        return response_vars
+        return filled_slots | kwargs
 
     @staticmethod
     def _format_response_conditions(response_conditions: List[Dict[Text, Any]]) -> Text:
         formatted_response_conditions = [""]
         for index, condition in enumerate(response_conditions):
-            constraints = []
-            constraints.append(f"type: {str(condition['type'])}")
-            constraints.append(f"name: {str(condition['name'])}")
-            constraints.append(f"value: {str(condition['value'])}")
-
+            constraints = [
+                f"type: {str(condition['type'])}",
+                f"name: {str(condition['name'])}",
+                f"value: {str(condition['value'])}",
+            ]
             condition_message = " | ".join(constraints)
             formatted_condition = f"[condition {str(index + 1)}] {condition_message}"
             formatted_response_conditions.append(formatted_condition)

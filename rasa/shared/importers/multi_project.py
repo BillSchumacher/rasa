@@ -27,10 +27,7 @@ class MultiProjectImporter(TrainingDataImporter):
         project_directory: Optional[Text] = None,
     ):
         self.config = rasa.shared.utils.io.read_model_configuration(config_file)
-        if domain_path:
-            self._domain_paths = [domain_path]
-        else:
-            self._domain_paths = []
+        self._domain_paths = [domain_path] if domain_path else []
         self._story_paths = []
         self._e2e_story_paths: List[Text] = []
         self._nlu_paths = []
@@ -154,12 +151,11 @@ class MultiProjectImporter(TrainingDataImporter):
         )
 
     def _is_in_project_directory(self, path: Text) -> bool:
-        if os.path.isfile(path):
-            parent_directory = os.path.abspath(os.path.dirname(path))
-
-            return parent_directory == self._project_directory
-        else:
+        if not os.path.isfile(path):
             return path == self._project_directory
+        parent_directory = os.path.abspath(os.path.dirname(path))
+
+        return parent_directory == self._project_directory
 
     def _is_in_additional_paths(self, path: Text) -> bool:
         included = path in self._additional_paths
@@ -172,7 +168,7 @@ class MultiProjectImporter(TrainingDataImporter):
 
     def _is_in_imported_paths(self, path: Text) -> bool:
         return any(
-            [rasa.shared.utils.io.is_subdirectory(path, i) for i in self._imports]
+            rasa.shared.utils.io.is_subdirectory(path, i) for i in self._imports
         )
 
     def get_domain(self) -> Domain:

@@ -68,7 +68,7 @@ def test_remove_expired_tickets():
     lock = TicketLock("random id 1")
 
     # issue one long- and one short-lived ticket
-    _ = list(map(lock.issue_ticket, [k for k in [0.01, 10]]))
+    _ = list(map(lock.issue_ticket, [0.01, 10]))
 
     # both tickets are there
     assert len(lock.tickets) == 2
@@ -373,7 +373,10 @@ async def test_redis_lock_store_with_valid_prefix(monkeypatch: MonkeyPatch):
 
     prefix = "chatbot42"
     lock_store._set_key_prefix(prefix)
-    assert lock_store.key_prefix == prefix + ":" + DEFAULT_REDIS_LOCK_STORE_KEY_PREFIX
+    assert (
+        lock_store.key_prefix
+        == f"{prefix}:{DEFAULT_REDIS_LOCK_STORE_KEY_PREFIX}"
+    )
 
     monkeypatch.setattr(
         lock_store,

@@ -187,9 +187,9 @@ class SingleStateFeaturizer:
     ) -> Dict[Text, List[Features]]:
 
         # Remove entities from possible attributes
-        attributes = set(
+        attributes = {
             attribute for attribute in sub_state.keys() if attribute != ENTITIES
-        )
+        }
 
         if precomputations is not None:
 
@@ -254,10 +254,8 @@ class SingleStateFeaturizer:
         state_features = {}
         for state_type, sub_state in state.items():
             if state_type == PREVIOUS_ACTION:
-                state_features.update(
-                    self._extract_state_features(
-                        sub_state, precomputations=precomputations, sparse=True
-                    )
+                state_features |= self._extract_state_features(
+                    sub_state, precomputations=precomputations, sparse=True
                 )
             # featurize user only if it is "real" user input,
             # i.e. input from a turn after action_listen

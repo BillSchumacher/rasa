@@ -377,11 +377,11 @@ class RasaModel(Model):
         """Recursively replaces empty list or np array with None in a dictionary."""
 
         def _recurse(
-            x: Union[Dict[Text, Any], List[Any], np.ndarray]
-        ) -> Optional[Union[Dict[Text, Any], List[Any], np.ndarray]]:
+                x: Union[Dict[Text, Any], List[Any], np.ndarray]
+            ) -> Optional[Union[Dict[Text, Any], List[Any], np.ndarray]]:
             if isinstance(x, dict):
                 return {k: _recurse(v) for k, v in x.items()}
-            elif (isinstance(x, list) or isinstance(x, np.ndarray)) and np.size(x) == 0:
+            elif (isinstance(x, (list, np.ndarray))) and np.size(x) == 0:
                 return None
             return x
 
@@ -871,14 +871,9 @@ class TransformerRasaModel(RasaModel):
 
     @staticmethod
     def _get_batch_dim(attribute_data: Dict[Text, List[tf.Tensor]]) -> int:
-        # All the values in the attribute_data dict should be lists of tensors, each
-        # tensor of the shape (batch_dim, ...). So we take the first non-empty list we
-        # encounter and infer the batch size from its first tensor.
-        for key, data in attribute_data.items():
-            if data:
-                return tf.shape(data[0])[0]
-
-        return 0
+        return next(
+            (tf.shape(data[0])[0] for data in attribute_data.values() if data), 0
+        )
 
     def _calculate_entity_loss(
         self,

@@ -66,7 +66,7 @@ def test_spacy_training_sample_alignment(
     assert isinstance(attribute_docs["text"][2], Doc)
 
     assert [t.text for t in attribute_docs["text"][0]] == ["i", "have", "a", "feeling"]
-    assert [t.text for t in attribute_docs["text"][1]] == []
+    assert not [t.text for t in attribute_docs["text"][1]]
     assert [t.text for t in attribute_docs["text"][2]] == [
         "i",
         "am",
@@ -86,7 +86,7 @@ def test_spacy_intent_featurizer(
 
     intent_features_exist = np.array(
         [
-            True if example.get("intent_features") is not None else False
+            example.get("intent_features") is not None
             for example in td.intent_examples
         ]
     )
@@ -136,9 +136,7 @@ def test_spacy_featurizer_default_case_insensitive(spacy_nlp_component):
 
         assert np.allclose(
             vecs, vecs_capitalized, atol=1e-5
-        ), "Vectors are unequal for texts '{}' and '{}'".format(
-            e.get(TEXT), e.get(TEXT).capitalize()
-        )
+        ), f"Vectors are unequal for texts '{e.get(TEXT)}' and '{e.get(TEXT).capitalize()}'"
 
 
 def test_spacy_featurizer_can_be_case_sensitive(spacy_case_sensitive_nlp_component):

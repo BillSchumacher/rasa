@@ -71,13 +71,9 @@ def create_diet(
     default_diet_resource: Resource,
 ) -> Callable[..., DIETClassifier]:
     def inner(
-        config: Dict[Text, Any], load: bool = False, finetune: bool = False
-    ) -> DIETClassifier:
-        if load:
-            constructor = DIETClassifier.load
-        else:
-            constructor = DIETClassifier.create
-
+            config: Dict[Text, Any], load: bool = False, finetune: bool = False
+        ) -> DIETClassifier:
+        constructor = DIETClassifier.load if load else DIETClassifier.create
         default_execution_context.is_finetuning = finetune
         return constructor(
             config=rasa.utils.common.override_defaults(
@@ -462,7 +458,7 @@ async def test_softmax_normalization(
 
     # check whether normalization had the expected effect
     output_sums_to_1 = sum(
-        [intent.get("confidence") for intent in intent_ranking]
+        intent.get("confidence") for intent in intent_ranking
     ) == pytest.approx(1)
     assert output_sums_to_1 == output_should_sum_to_1
 
@@ -584,7 +580,7 @@ async def test_train_model_checkpointing(
     )
     with default_model_storage.read_from(default_diet_resource) as model_dir:
         all_files = list(model_dir.rglob("*.*"))
-        assert any(["from_checkpoint" in str(filename) for filename in all_files])
+        assert any("from_checkpoint" in str(filename) for filename in all_files)
 
 
 async def test_process_unfeaturized_input(
@@ -614,7 +610,7 @@ async def test_train_model_not_checkpointing(
 
     with default_model_storage.read_from(default_diet_resource) as model_dir:
         all_files = list(model_dir.rglob("*.*"))
-        assert not any(["from_checkpoint" in str(filename) for filename in all_files])
+        assert all("from_checkpoint" not in str(filename) for filename in all_files)
 
 
 async def test_train_fails_with_zero_eval_num_epochs(
@@ -666,7 +662,7 @@ async def test_doesnt_checkpoint_with_zero_eval_num_examples(
 
     with default_model_storage.read_from(default_diet_resource) as model_dir:
         all_files = list(model_dir.rglob("*.*"))
-        assert not any(["from_checkpoint" in str(filename) for filename in all_files])
+        assert all("from_checkpoint" not in str(filename) for filename in all_files)
 
 
 @pytest.mark.parametrize(

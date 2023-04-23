@@ -33,11 +33,10 @@ def _fix_matplotlib_backend() -> None:
             # on OSX sometimes the tkinter package is broken and can't be imported.
             # we'll try to import it and if it fails we will use a different backend
             import tkinter
-        except (ImportError, ModuleNotFoundError):
+        except ImportError:
             logger.debug("Setting matplotlib backend to 'agg'")
             matplotlib.use("agg")
 
-    # if no backend is set by default, we'll try to set it up manually
     elif backend is None:  # pragma: no cover
         try:
             # If the `tkinter` package is available, we can use the `TkAgg` backend
@@ -45,7 +44,7 @@ def _fix_matplotlib_backend() -> None:
 
             logger.debug("Setting matplotlib backend to 'TkAgg'")
             matplotlib.use("TkAgg")
-        except (ImportError, ModuleNotFoundError):
+        except ImportError:
             logger.debug("Setting matplotlib backend to 'agg'")
             matplotlib.use("agg")
 
@@ -189,7 +188,7 @@ def _extract_paired_histogram_specification(
     if density:
         # Get the maximum count across both histograms, and scale it
         # with `x_pad_fraction`
-        v = max([(1.0 + x_pad_fraction) * max(histogram) for histogram in histograms])
+        v = max((1.0 + x_pad_fraction) * max(histogram) for histogram in histograms)
         # When we plot the PDF, let both x-axes run to the same value
         # so it's easier to compare visually
         x_ranges = [v, v]
@@ -200,7 +199,8 @@ def _extract_paired_histogram_specification(
 
     try:
         bin_of_first_non_zero_tally = min(
-            [[bool(v) for v in histogram].index(True) for histogram in histograms]
+            [bool(v) for v in histogram].index(True)
+            for histogram in histograms
         )
     except ValueError:
         bin_of_first_non_zero_tally = 0

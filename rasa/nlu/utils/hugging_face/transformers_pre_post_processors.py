@@ -73,9 +73,7 @@ def xlnet_tokens_pre_processor(token_ids: List[int]) -> List[int]:
     XLNET_CLS_ID = 3
     XLNET_SEP_ID = 4
 
-    token_ids.append(XLNET_SEP_ID)
-    token_ids.append(XLNET_CLS_ID)
-
+    token_ids.extend((XLNET_SEP_ID, XLNET_CLS_ID))
     return token_ids
 
 

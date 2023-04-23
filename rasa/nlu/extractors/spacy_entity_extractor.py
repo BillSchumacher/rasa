@@ -82,7 +82,7 @@ class SpacyEntityExtractor(GraphComponent, EntityExtractorMixin):
 
     @staticmethod
     def _extract_entities(doc: "Doc") -> List[Dict[Text, Any]]:
-        entities = [
+        return [
             {
                 "entity": ent.label_,
                 "value": ent.text,
@@ -92,4 +92,3 @@ class SpacyEntityExtractor(GraphComponent, EntityExtractorMixin):
             }
             for ent in doc.ents
         ]
-        return entities

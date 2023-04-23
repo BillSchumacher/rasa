@@ -141,18 +141,18 @@ class MessageContainerForCoreFeaturization:
         key_value = str(message_with_one_key_attribute.data[key_attribute])
         # extract the message
         existing_message = self._table[key_attribute].get(key_value)
-        if existing_message is not None:
-            if hash(existing_message) != hash(message_with_one_key_attribute):
-                raise ValueError(
-                    f"Expected added message to be consistent. "
-                    f"({key_attribute}, {key_value}) already maps "
-                    f"to {existing_message}, but we want to add "
-                    f"{message_with_one_key_attribute} now."
-                )
-            else:
-                self._num_collisions_ignored += 1
-        else:
+        if existing_message is None:
             self._table[key_attribute][key_value] = message_with_one_key_attribute
+
+        elif hash(existing_message) != hash(message_with_one_key_attribute):
+            raise ValueError(
+                f"Expected added message to be consistent. "
+                f"({key_attribute}, {key_value}) already maps "
+                f"to {existing_message}, but we want to add "
+                f"{message_with_one_key_attribute} now."
+            )
+        else:
+            self._num_collisions_ignored += 1
 
     def add_all(self, messages_with_one_key_attribute: List[Message]) -> None:
         """Adds the given messages.
@@ -196,7 +196,7 @@ class MessageContainerForCoreFeaturization:
         # If we specify a list of attributes, then we want a dict with one entry
         # for each attribute back - even if the corresponding list of features is empty.
         features: Dict[Text, List[Features]] = (
-            dict()
+            {}
             if attributes is None
             else {attribute: [] for attribute in attributes}
         )

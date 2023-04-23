@@ -146,7 +146,6 @@ def test_track_ignore_exception(monkeypatch: MonkeyPatch):
 
 def test_initialize_telemetry():
     telemetry.initialize_telemetry()
-    assert True
 
 
 def test_initialize_telemetry_with_env_false(monkeypatch: MonkeyPatch):

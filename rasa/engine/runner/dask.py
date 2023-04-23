@@ -70,14 +70,13 @@ class DaskGraphRunner(GraphRunner):
         For more information about dask graphs
         see: https://docs.dask.org/en/latest/spec.html
         """
-        run_graph = {
+        return {
             node_name: (
                 self._instantiated_nodes[node_name],
                 *schema_node.needs.values(),
             )
             for node_name, schema_node in schema.nodes.items()
         }
-        return run_graph
 
     def run(
         self,

@@ -224,12 +224,12 @@ class EvaluationStore:
 
         Possible duplicates or differences in order should not matter.
         """
-        deduplicated_targets = set(
+        deduplicated_targets = {
             tuple(entity.items()) for entity in self.entity_targets
-        )
-        deduplicated_predictions = set(
+        }
+        deduplicated_predictions = {
             tuple(entity.items()) for entity in self.entity_predictions
-        )
+        }
         return deduplicated_targets != deduplicated_predictions
 
     def check_prediction_target_mismatch(self) -> bool:
@@ -253,12 +253,8 @@ class EvaluationStore:
         while it returns 1 if the target entity comes first.
         If target and predicted are aligned it returns 0
         """
-        pred = None
-        target = None
-        if i_pred < len(entity_predictions):
-            pred = entity_predictions[i_pred]
-        if i_target < len(entity_targets):
-            target = entity_targets[i_target]
+        pred = entity_predictions[i_pred] if i_pred < len(entity_predictions) else None
+        target = entity_targets[i_target] if i_target < len(entity_targets) else None
         if target and pred:
             # Check which entity has the lower "start" value
             if pred.get(ENTITY_ATTRIBUTE_START) < target.get(ENTITY_ATTRIBUTE_START):
@@ -616,8 +612,7 @@ async def _get_e2e_entity_evaluation_result(
         ]
         entity_targets = previous_event.entities
         if entity_targets or entities_predicted_by_policies:
-            text = previous_event.text
-            if text:
+            if text := previous_event.text:
                 parsed_message = await processor.parse_message(UserMessage(text=text))
                 if parsed_message:
                     tokens = [
@@ -647,16 +642,14 @@ def _get_predicted_action_name(
     the function returns only the action name (e.g. utter_faq).
     """
     if (
-        isinstance(predicted_action, ActionRetrieveResponse)
-        and expected_action_name != predicted_action.name()
+        not isinstance(predicted_action, ActionRetrieveResponse)
+        or expected_action_name == predicted_action.name()
     ):
-        full_retrieval_name = predicted_action.get_full_retrieval_name(partial_tracker)
-        predicted_action_name = (
-            full_retrieval_name if full_retrieval_name else predicted_action.name()
-        )
-    else:
-        predicted_action_name = predicted_action.name()
-    return predicted_action_name
+        return predicted_action.name()
+    full_retrieval_name = predicted_action.get_full_retrieval_name(partial_tracker)
+    return (
+        full_retrieval_name if full_retrieval_name else predicted_action.name()
+    )
 
 
 async def _run_action_prediction(
@@ -873,16 +866,11 @@ async def _predict_tracker_actions(
             # This means that user utterance didn't have a user message, only intent,
             # so we can skip the NLU part and take the parse data directly.
             # Indirectly that means that the test story was in YAML format.
-            if not event.text:
-                # FIXME: better type annotation for `parse_data` would require
-                # a larger refactoring (e.g. switch to dataclass)
-                predicted = cast(Dict[Text, Any], event.parse_data)
-            # Indirectly that means that the test story was either:
-            # in YAML format containing a user message, or in Markdown format.
-            # Leaving that as it is because Markdown is in legacy mode.
-            else:
-                predicted = await processor.parse_message(UserMessage(event.text))
-
+            predicted = (
+                await processor.parse_message(UserMessage(event.text))
+                if event.text
+                else cast(Dict[Text, Any], event.parse_data)
+            )
             user_uttered_result = _collect_user_uttered_predictions(
                 event, predicted, partial_tracker, fail_on_prediction_errors
             )
@@ -1025,16 +1013,14 @@ async def _collect_story_predictions(
 
 
 def _filter_step_events(step: StoryStep) -> StoryStep:
-    events = []
-    for event in step.events:
-        if (
-            isinstance(event, WronglyPredictedAction)
-            and event.action_name
-            == event.action_name_prediction
-            == ACTION_UNLIKELY_INTENT_NAME
-        ):
-            continue
-        events.append(event)
+    events = [
+        event
+        for event in step.events
+        if not isinstance(event, WronglyPredictedAction)
+        or not event.action_name
+        == event.action_name_prediction
+        == ACTION_UNLIKELY_INTENT_NAME
+    ]
     updated_step = step.create_copy(use_new_id=False)
     updated_step.events = events
     return updated_step
@@ -1113,10 +1099,10 @@ async def test(
             # Add conversation level accuracy to story report.
             num_failed = len(story_evaluation.failed_stories)
             num_correct = len(story_evaluation.successful_stories)
-            num_warnings = len(story_evaluation.stories_with_warnings)
             num_convs = num_failed + num_correct
             if num_convs and isinstance(report, Dict):
                 conv_accuracy = num_correct / num_convs
+                num_warnings = len(story_evaluation.stories_with_warnings)
                 report["conversation_accuracy"] = {
                     "accuracy": conv_accuracy,
                     "correct": num_correct,

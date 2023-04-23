@@ -2253,11 +2253,9 @@ async def test_action_extract_slots_disallowed_events(caplog: LogCaptureFixture)
         )
 
         assert all(
-            [
-                "Running custom action 'action_test' has resulted "
-                "in an event of type 'reset_slots'." in record[2]
-                for record in caplog_info_records
-            ]
+            "Running custom action 'action_test' has resulted "
+            "in an event of type 'reset_slots'." in record[2]
+            for record in caplog_info_records
         )
         assert slot_events == [SlotSet("custom_slot_one", 1)]
 
@@ -2309,11 +2307,9 @@ async def test_action_extract_slots_warns_custom_action_exceptions(
             )
 
         assert any(
-            [
-                "The default action 'action_extract_slots' failed to fill "
-                "slots with custom mappings." in message
-                for message in caplog.messages
-            ]
+            "The default action 'action_extract_slots' failed to fill "
+            "slots with custom mappings." in message
+            for message in caplog.messages
         )
 
 
@@ -2555,7 +2551,7 @@ async def test_action_extract_slots_returns_bot_uttered():
             tracker,
             domain,
         )
-        assert all([isinstance(event, (SlotSet, BotUttered)) for event in events])
+        assert all(isinstance(event, (SlotSet, BotUttered)) for event in events)
 
 
 async def test_action_extract_slots_does_not_raise_disallowed_warning_for_slot_events(
@@ -2624,7 +2620,7 @@ async def test_action_extract_slots_does_not_raise_disallowed_warning_for_slot_e
         caplog_info_records = list(
             filter(lambda x: x[1] == logging.INFO, caplog.record_tuples)
         )
-        assert len(caplog_info_records) == 0
+        assert not caplog_info_records
 
         assert events == [
             SlotSet("custom_slot_b", "test_B"),

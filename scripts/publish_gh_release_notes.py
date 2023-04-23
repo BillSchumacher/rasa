@@ -45,23 +45,17 @@ def parse_changelog(tag_name: Text) -> Text:
     consuming_version = False
     version_lines = []
     for line in changelog_lines:
-        m = title_regex.match(line)
-        if m:
+        if m := title_regex.match(line):
             # found the version we want: start to consume lines
             # until we find the next version title
-            if m.group(1) == tag_name:
+            if m[1] == tag_name:
                 consuming_version = True
-            # found a new version title while parsing the version we want: break out
             elif consuming_version:
                 break
         if consuming_version:
             version_lines.append(line)
 
-    if consuming_version:
-        # drop the first lines (version headline, not needed for GH)
-        return "\n".join(version_lines[2:]).strip()
-    else:
-        return None
+    return "\n".join(version_lines[2:]).strip() if consuming_version else None
 
 
 def main():
@@ -81,11 +75,7 @@ def main():
         return 1
 
     version = Version(tag_name)
-    if version.pre:
-        md_body = "_Pre-release version_"
-    else:
-        md_body = parse_changelog(tag_name)
-
+    md_body = "_Pre-release version_" if version.pre else parse_changelog(tag_name)
     if md_body is None:
         print("Failed to extract changelog entries for version from changelog.")
         return 2

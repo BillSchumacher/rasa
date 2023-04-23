@@ -102,11 +102,7 @@ class YamlValidationException(YamlException, ValueError):
         if not path:
             return this_line
 
-        if "/" in path:
-            head, tail = path.split("/", 1)
-        else:
-            head, tail = path, ""
-
+        head, tail = path.split("/", 1) if "/" in path else (path, "")
         if head:
             if isinstance(current, dict) and head in current:
                 return self._line_number_for_path(current[head], tail) or this_line

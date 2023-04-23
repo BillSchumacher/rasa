@@ -45,14 +45,12 @@ class RasaChatInput(RestInput):
         public_key_url = f"{self.base_url}/version"
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                public_key_url, timeout=DEFAULT_REQUEST_TIMEOUT
-            ) as resp:
+                        public_key_url, timeout=DEFAULT_REQUEST_TIMEOUT
+                    ) as resp:
                 status_code = resp.status
                 if status_code != 200:
                     logger.error(
-                        "Failed to fetch JWT public key from URL '{}' with "
-                        "status code {}: {}"
-                        "".format(public_key_url, status_code, await resp.text())
+                        f"Failed to fetch JWT public key from URL '{public_key_url}' with status code {status_code}: {await resp.text()}"
                     )
                     return
                 rjs = await resp.json()
@@ -61,16 +59,11 @@ class RasaChatInput(RestInput):
                     self.jwt_key = rjs["keys"][0]["key"]
                     self.jwt_algorithm = rjs["keys"][0]["alg"]
                     logger.debug(
-                        "Fetched JWT public key from URL '{}' for algorithm '{}':\n{}"
-                        "".format(public_key_url, self.jwt_algorithm, self.jwt_key)
+                        f"Fetched JWT public key from URL '{public_key_url}' for algorithm '{self.jwt_algorithm}':\n{self.jwt_key}"
                     )
                 else:
                     logger.error(
-                        "Retrieved json response from URL '{}' but could not find "
-                        "'{}' field containing the JWT public key. Please make sure "
-                        "you use an up-to-date version of Rasa Enterprise (>= 0.20.2). "
-                        "Response was: {}"
-                        "".format(public_key_url, public_key_field, json.dumps(rjs))
+                        f"Retrieved json response from URL '{public_key_url}' but could not find '{public_key_field}' field containing the JWT public key. Please make sure you use an up-to-date version of Rasa Enterprise (>= 0.20.2). Response was: {json.dumps(rjs)}"
                     )
 
     async def _decode_bearer_token(self, bearer_token: Text) -> Optional[Dict]:
@@ -105,14 +98,10 @@ class RasaChatInput(RestInput):
                 jwt_payload, req.json
             ):
                 return req.json[CONVERSATION_ID_KEY]
-            else:
-                logger.error(
-                    "User '{}' does not have permissions to send messages to "
-                    "conversation '{}'.".format(
-                        jwt_payload[JWT_USERNAME_KEY], req.json[CONVERSATION_ID_KEY]
-                    )
-                )
-                raise SanicException(status_code=401)
+            logger.error(
+                f"User '{jwt_payload[JWT_USERNAME_KEY]}' does not have permissions to send messages to conversation '{req.json[CONVERSATION_ID_KEY]}'."
+            )
+            raise SanicException(status_code=401)
 
         return jwt_payload[JWT_USERNAME_KEY]
 

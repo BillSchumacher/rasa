@@ -93,4 +93,4 @@ async def test_shell_without_assistant_id_issues_warning(
 
     printed_output = {line.strip() for line in output.outlines}
 
-    assert any([warning_message in line for line in printed_output])
+    assert any(warning_message in line for line in printed_output)

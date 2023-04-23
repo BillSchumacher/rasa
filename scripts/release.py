@@ -123,9 +123,8 @@ def confirm_version(version: Version) -> bool:
         ).ask()
     if confirmed:
         return True
-    else:
-        print("Aborting.")
-        sys.exit(1)
+    print("Aborting.")
+    sys.exit(1)
 
 
 def ask_version() -> Text:
@@ -165,9 +164,8 @@ def ask_version() -> Text:
 
     if version:
         return version
-    else:
-        print("Aborting.")
-        sys.exit(1)
+    print("Aborting.")
+    sys.exit(1)
 
 
 def get_rasa_sdk_version() -> Text:

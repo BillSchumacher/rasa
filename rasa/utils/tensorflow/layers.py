@@ -132,11 +132,7 @@ class DenseForSparse(tf.keras.layers.Dense):
     """
 
     def __init__(self, reg_lambda: float = 0, **kwargs: Any) -> None:
-        if reg_lambda > 0:
-            regularizer = tf.keras.regularizers.l2(reg_lambda)
-        else:
-            regularizer = None
-
+        regularizer = tf.keras.regularizers.l2(reg_lambda) if reg_lambda > 0 else None
         super().__init__(kernel_regularizer=regularizer, **kwargs)
 
     def get_units(self) -> int:
@@ -149,9 +145,7 @@ class DenseForSparse(tf.keras.layers.Dense):
 
     def get_bias(self) -> Union[tf.Tensor, None]:
         """Returns bias tensor."""
-        if self.use_bias:
-            return self.bias
-        return None
+        return self.bias if self.use_bias else None
 
     def get_feature_type(self) -> Union[Text, None]:
         """Returns a feature type of the data that's fed to the layer.
@@ -164,10 +158,14 @@ class DenseForSparse(tf.keras.layers.Dense):
         Returns:
             feature type of dense layer.
         """
-        for feature_type in [FEATURE_TYPE_SENTENCE, FEATURE_TYPE_SEQUENCE]:
-            if feature_type in self.name:
-                return feature_type
-        return None
+        return next(
+            (
+                feature_type
+                for feature_type in [FEATURE_TYPE_SENTENCE, FEATURE_TYPE_SEQUENCE]
+                if feature_type in self.name
+            ),
+            None,
+        )
 
     def get_attribute(self) -> Union[Text, None]:
         """Returns the attribute for which this layer was constructed.
@@ -217,9 +215,7 @@ class DenseForSparse(tf.keras.layers.Dense):
 
         if self.use_bias:
             outputs = tf.nn.bias_add(outputs, self.bias)
-        if self.activation is not None:
-            return self.activation(outputs)
-        return outputs
+        return self.activation(outputs) if self.activation is not None else outputs
 
 
 class RandomlyConnectedDense(tf.keras.layers.Dense):
@@ -344,15 +340,13 @@ class RandomlyConnectedDense(tf.keras.layers.Dense):
         num_cols = kernel_shape[1]
         short_dimension = tf.minimum(num_rows, num_cols)
 
-        mask = tf.tile(
+        return tf.tile(
             tf.eye(short_dimension, dtype=self.kernel.dtype),
             [
                 tf.math.ceil(num_rows / short_dimension),
                 tf.math.ceil(num_cols / short_dimension),
             ],
         )[:num_rows, :num_cols]
-
-        return mask
 
     def call(self, inputs: tf.Tensor) -> tf.Tensor:
         """Processes the given inputs.
@@ -1138,10 +1132,9 @@ class SingleLabelDotProductLoss(DotProductLoss):
             )
         # create label_ids for softmax
         softmax_label_ids = tf.zeros_like(softmax_logits[..., 0], tf.int32)
-        softmax_loss = tf.nn.sparse_softmax_cross_entropy_with_logits(
+        return tf.nn.sparse_softmax_cross_entropy_with_logits(
             labels=softmax_label_ids, logits=softmax_logits
         )
-        return softmax_loss
 
     @property
     def _chosen_loss(self) -> Callable:
@@ -1357,22 +1350,16 @@ class MultiLabelDotProductLoss(DotProductLoss):
         # Flip 1 and 0 to 0 and 1 respectively
         pos_label_pad_mask = 1 - pos_label_pad_indices
 
-        # `pos_label_pad_mask` only contains the mask for label ids
-        # seen in the batch. For sampled candidate label ids, the mask
-        # should be a tensor of `1`s since all candidate label ids
-        # are valid. From this, we construct the padding mask for
-        # all label ids: label ids seen in the batch + label ids sampled.
-        all_label_pad_mask = tf.concat(
+        return tf.concat(
             [
                 pos_label_pad_mask,
                 tf.ones(
-                    (tf.shape(batch_labels_ids)[0], num_candidates), dtype=tf.float32
+                    (tf.shape(batch_labels_ids)[0], num_candidates),
+                    dtype=tf.float32,
                 ),
             ],
             axis=-1,
         )
-
-        return all_label_pad_mask
 
     def _train_sim(
         self,

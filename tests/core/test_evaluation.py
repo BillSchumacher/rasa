@@ -540,7 +540,7 @@ async def test_log_evaluation_table(caplog, skip_field, skip_value):
     else:
         assert "In-data fraction:" not in caplog.text
 
-    if skip_field != "report" and skip_field != "include_report":
+    if skip_field not in ["report", "include_report"]:
         assert f"Classification report: \n{kwargs['report']}" in caplog.text
     else:
         assert "Classification report:" not in caplog.text
@@ -609,7 +609,7 @@ async def test_wrong_predictions_with_intent_and_entities(
         # check that it does not double print entities
         assert failed_stories.count("\n") == 9
 
-    elif not correct_intent and not correct_entity:
+    elif not correct_intent:
         # check if there is a comment with the predicted intent on the intent line
         assert "- intent: greet  # predicted: request_restaurant" in failed_stories
         # check if there is a comment with the predicted entity on the entity line

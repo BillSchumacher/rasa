@@ -324,7 +324,7 @@ class TrainingData:
     def sort_regex_features(self) -> None:
         """Sorts regex features lexicographically by name+pattern"""
         self.regex_features = sorted(
-            self.regex_features, key=lambda e: "{}+{}".format(e["name"], e["pattern"])
+            self.regex_features, key=lambda e: f'{e["name"]}+{e["pattern"]}'
         )
 
     def _fill_response_phrases(self) -> None:
@@ -340,9 +340,7 @@ class TrainingData:
             story_lookup_key = util.intent_response_key_to_template_key(
                 example.get_full_intent()
             )
-            assistant_utterances = self.responses.get(story_lookup_key, [])
-            if assistant_utterances:
-
+            if assistant_utterances := self.responses.get(story_lookup_key, []):
                 # Use the first response text as training label if needed downstream
                 for assistant_utterance in assistant_utterances:
                     if assistant_utterance.get(TEXT):
@@ -423,7 +421,7 @@ class TrainingData:
         # Add nlg_ as prefix and change extension to the correct one
         filename = (
             Path(nlu_filename)
-            .with_name("nlg_" + Path(nlu_filename).name)
+            .with_name(f"nlg_{Path(nlu_filename).name}")
             .with_suffix(extension)
         )
         return str(filename)
@@ -656,7 +654,7 @@ class TrainingData:
                 for e in training_examples
                 if INTENT in e.data and e.data[INTENT] == intent
             ]
-            if len(examples) > 0:  # will be 0 for retrieval intents
+            if examples:  # will be 0 for retrieval intents
                 running_count, running_train_count = _split_class(
                     examples, running_count, running_train_count
                 )
@@ -665,11 +663,10 @@ class TrainingData:
         return test, train
 
     def print_stats(self) -> None:
-        number_of_examples_for_each_intent = []
-        for intent_name, example_count in self.number_of_examples_per_intent.items():
-            number_of_examples_for_each_intent.append(
-                f"intent: {intent_name}, training examples: {example_count}   "
-            )
+        number_of_examples_for_each_intent = [
+            f"intent: {intent_name}, training examples: {example_count}   "
+            for intent_name, example_count in self.number_of_examples_per_intent.items()
+        ]
         newline = "\n"
 
         logger.info("Training data stats:")
@@ -707,7 +704,7 @@ class TrainingData:
             self.regex_features,
             self.lookup_tables,
         ]
-        return not any([len(lst) > 0 for lst in lists_to_check])
+        return all(len(lst) <= 0 for lst in lists_to_check)
 
     def contains_no_pure_nlu_data(self) -> bool:
         """Checks if any NLU training data was loaded."""
@@ -717,7 +714,7 @@ class TrainingData:
             self.regex_features,
             self.lookup_tables,
         ]
-        return not any([len(lst) > 0 for lst in lists_to_check])
+        return all(len(lst) <= 0 for lst in lists_to_check)
 
     def has_e2e_examples(self) -> bool:
         """Checks if there are any training examples from e2e stories."""

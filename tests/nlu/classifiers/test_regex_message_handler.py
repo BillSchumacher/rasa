@@ -26,15 +26,7 @@ def regex_message_handler(
     )
 
 
-@pytest.mark.parametrize(
-    "text",
-    [
-        "some other text",
-        "text" + INTENT_MESSAGE_PREFIX,
-        INTENT_MESSAGE_PREFIX,
-        INTENT_MESSAGE_PREFIX + "@0.5",
-    ],
-)
+@pytest.mark.parametrize("text", ["some other text", f"text{INTENT_MESSAGE_PREFIX}", INTENT_MESSAGE_PREFIX, f"{INTENT_MESSAGE_PREFIX}@0.5"])
 def test_process_does_not_do_anything(
     regex_message_handler: RegexMessageHandler, text: Text
 ):

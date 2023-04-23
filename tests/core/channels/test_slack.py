@@ -292,16 +292,11 @@ def test_slack_message_sanitization():
     ]
 
     # no message that is wrongly sanitized please
-    assert (
-        len(
-            [
-                sanitized
-                for sanitized, target in zip(sanitized_messages, target_messages)
-                if sanitized != target
-            ]
-        )
-        == 0
-    )
+    assert not [
+        sanitized
+        for sanitized, target in zip(sanitized_messages, target_messages)
+        if sanitized != target
+    ]
 
 
 def test_slack_init_token_parameter():

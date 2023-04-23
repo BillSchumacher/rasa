@@ -175,7 +175,7 @@ class FeatureArray(np.ndarray):
         self.number_of_dimensions = state[-3]
         self.is_sparse = state[-2]
         self.units = state[-1]
-        super(FeatureArray, self).__setstate__(state[0:-3], **kwargs)
+        super(FeatureArray, self).__setstate__(state[:-3], **kwargs)
 
     # pytype: enable=attribute-error
 
@@ -341,10 +341,7 @@ class RasaModelData:
         if key is None:
             return list(self.data.keys())
 
-        if key in self.data:
-            return list(self.data[key].keys())
-
-        return []
+        return list(self.data[key].keys()) if key in self.data else []
 
     def sort(self) -> None:
         """Sorts data according to its keys."""
@@ -431,7 +428,7 @@ class RasaModelData:
             return 0
 
         # check if number of examples is the same for all values
-        if not all(length == example_lengths[0] for length in example_lengths):
+        if any(length != example_lengths[0] for length in example_lengths):
             raise ValueError(
                 f"Number of examples differs for keys '{data.keys()}'. Number of "
                 f"examples should be the same for all data."
@@ -452,12 +449,11 @@ class RasaModelData:
         if key not in self.data or sub_key not in self.data[key]:
             return 0
 
-        units = 0
-        for features in self.data[key][sub_key]:
-            if len(features) > 0:
-                units += features.units  # type: ignore[operator]
-
-        return units
+        return sum(
+            features.units
+            for features in self.data[key][sub_key]
+            if len(features) > 0
+        )
 
     def add_data(self, data: Data, key_prefix: Optional[Text] = None) -> None:
         """Add incoming data to data.
@@ -981,10 +977,10 @@ class RasaModelData:
         if label_ids.ndim == 1:
             return label_ids
 
-        if label_ids.ndim == 2 and label_ids.shape[-1] == 1:
-            return label_ids[:, 0]
-
         if label_ids.ndim == 2:
+            if label_ids.shape[-1] == 1:
+                return label_ids[:, 0]
+
             return np.array([" ".join(row.astype("str")) for row in label_ids])
 
         if label_ids.ndim == 3 and label_ids.shape[-1] == 1:

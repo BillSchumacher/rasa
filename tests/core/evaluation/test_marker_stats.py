@@ -204,7 +204,7 @@ def test_overall_statistics_to_csv(tmp_path: Path, seed: int):
 
     with tmp_file.open(mode="r") as f:
         reader = csv.DictReader(f)
-        rows = [row for row in reader]
+        rows = list(reader)
 
     assert rows[0] == {
         "sender_id": "all",
@@ -281,7 +281,7 @@ def test_per_session_statistics_to_csv(tmp_path: Path, seed: int):
 
     with tmp_file.open(mode="r") as f:
         reader = csv.DictReader(f)
-        rows = [row for row in reader]
+        rows = list(reader)
 
     actual_information = {
         (row["sender_id"], row["session_idx"], row["marker"], row["statistic"]): row[

@@ -115,10 +115,9 @@ class TrainingDataImporter(ABC):
 
         Instance loaded from configuration file will only read Core training data.
         """
-        importer = TrainingDataImporter.load_from_config(
+        return TrainingDataImporter.load_from_config(
             config_path, domain_path, training_data_paths
         )
-        return importer
 
     @staticmethod
     def load_nlu_importer_from_config(

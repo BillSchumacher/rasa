@@ -26,8 +26,7 @@ def convert_training_data(
 
     if not os.path.exists(str(data_file)):
         print_error(
-            "Data file '{}' does not exist. Provide a valid NLU data file using "
-            "the '--data' argument.".format(data_file)
+            f"Data file '{data_file}' does not exist. Provide a valid NLU data file using the '--data' argument."
         )
         return
 

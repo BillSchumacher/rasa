@@ -90,10 +90,10 @@ class RocketChatBot(OutputChannel):
                     "message post. Defaulting to `channel`."
                 )
                 del json_message["room_id"]
-            return self.rocket.chat_post_message(text, **json_message)
         else:
             json_message.setdefault("room_id", recipient_id)
-            return self.rocket.chat_post_message(text, **json_message)
+
+        return self.rocket.chat_post_message(text, **json_message)
 
 
 class RocketChatInput(InputChannel):

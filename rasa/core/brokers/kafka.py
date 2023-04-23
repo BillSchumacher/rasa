@@ -269,11 +269,11 @@ def kafka_error_callback(err: "KafkaError") -> None:
 
     # handle authentication / connection related issues, likely pointing
     # to a configuration error
-    if (
-        err.code() == KafkaError._ALL_BROKERS_DOWN
-        or err.code() == KafkaError._AUTHENTICATION
-        or err.code() == KafkaError._MAX_POLL_EXCEEDED
-    ):
+    if err.code() in [
+        KafkaError._ALL_BROKERS_DOWN,
+        KafkaError._AUTHENTICATION,
+        KafkaError._MAX_POLL_EXCEEDED,
+    ]:
         raise KafkaException(err)
     else:
         logger.warning("A KafkaError has been raised.", exc_info=True)

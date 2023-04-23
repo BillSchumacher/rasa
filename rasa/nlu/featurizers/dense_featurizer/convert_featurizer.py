@@ -353,7 +353,7 @@ class ConveRTFeaturizer(DenseFeaturizer, GraphComponent):
 
             progress_bar = tqdm(
                 range(0, len(non_empty_examples), batch_size),
-                desc=attribute.capitalize() + " batches",
+                desc=f"{attribute.capitalize()} batches",
             )
             for batch_start_index in progress_bar:
                 batch_end_index = min(
