@@ -168,7 +168,7 @@ def _copy_files_to_new_dir(files: Iterable[Text]) -> Text:
     for f in files:
         # makes sure files do not overwrite each other, hence the prefix
         unique_prefix = uuid.uuid4().hex
-        unique_file_name = unique_prefix + "_" + os.path.basename(f)
+        unique_file_name = f"{unique_prefix}_{os.path.basename(f)}"
         shutil.copy2(f, os.path.join(directory, unique_file_name))
 
     return directory
@@ -187,6 +187,4 @@ class TrainingType(Enum):
         """Returns the type of model which this training yields."""
         if self == TrainingType.NLU:
             return "nlu"
-        if self == TrainingType.CORE:
-            return "core"
-        return "rasa"
+        return "core" if self == TrainingType.CORE else "rasa"

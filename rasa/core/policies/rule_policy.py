@@ -198,12 +198,7 @@ class RulePolicy(MemoizationPolicy):
                 break
             new_states.insert(0, state)
 
-        if not new_states:
-            return None
-
-        # we sort keys to make sure that the same states
-        # represented as dictionaries have the same json strings
-        return json.dumps(new_states, sort_keys=True)
+        return json.dumps(new_states, sort_keys=True) if new_states else None
 
     @staticmethod
     def _states_for_unhappy_loop_predictions(states: List[State]) -> List[State]:
@@ -342,10 +337,10 @@ class RulePolicy(MemoizationPolicy):
         if action_name and fingerprint_active_loops:
             # substitute `SHOULD_NOT_BE_SET` with `null` so that users
             # know what to put in their rules
-            fingerprint_active_loops = set(
+            fingerprint_active_loops = {
                 "null" if active_loop == SHOULD_NOT_BE_SET else active_loop
                 for active_loop in fingerprint_active_loops
-            )
+            }
             # add action_name to active loop so that users
             # know what to put in their rules
             fingerprint_active_loops.add(action_name)
@@ -425,11 +420,9 @@ class RulePolicy(MemoizationPolicy):
         for states in trackers_as_states:
             for state in states:
                 slots.update(set(state.get(SLOTS, {}).keys()))
-                # FIXME: ideally we have better annotation for State, TypedDict
-                # could work but support in mypy is very limited. Dataclass are
-                # another option
-                active_loop = cast(Text, state.get(ACTIVE_LOOP, {}).get(LOOP_NAME))
-                if active_loop:
+                if active_loop := cast(
+                    Text, state.get(ACTIVE_LOOP, {}).get(LOOP_NAME)
+                ):
                     loops.add(active_loop)
         return slots, loops
 
@@ -552,14 +545,11 @@ class RulePolicy(MemoizationPolicy):
             or predicted_action_name != ACTION_LISTEN_NAME
         ):
             return False
-        for source in self.lookup[RULES]:
-            # remove rule only if another action is predicted after action_listen
-            if (
-                source.startswith(prediction_source[:-2])
-                and not prediction_source == source
-            ):
-                return True
-        return False
+        return any(
+            source.startswith(prediction_source[:-2])
+            and prediction_source != source
+            for source in self.lookup[RULES]
+        )
 
     def _check_prediction(
         self,
@@ -601,7 +591,7 @@ class RulePolicy(MemoizationPolicy):
         if predicted_action_name != self._fallback_action_name:
             error_message += f" which predicted action '{predicted_action_name}'"
 
-        return [error_message + "."]
+        return [f"{error_message}."]
 
     def _run_prediction_on_trackers(
         self,
@@ -925,7 +915,7 @@ class RulePolicy(MemoizationPolicy):
         tracker: DialogueStateTracker,
     ) -> Tuple[Optional[Text], Optional[Text]]:
         if (
-            not tracker.latest_action_name == ACTION_LISTEN_NAME
+            tracker.latest_action_name != ACTION_LISTEN_NAME
             or not tracker.latest_message
         ):
             return None, None
@@ -1005,7 +995,7 @@ class RulePolicy(MemoizationPolicy):
         """
         if (
             use_text_for_last_user_input
-            and not tracker.latest_action_name == ACTION_LISTEN_NAME
+            and tracker.latest_action_name != ACTION_LISTEN_NAME
         ):
             # make text prediction only directly after user utterance
             # because we've otherwise already decided whether to use
@@ -1038,8 +1028,7 @@ class RulePolicy(MemoizationPolicy):
             best_rule_key = max(rule_keys, key=len)
             predicted_action_name = self.lookup[RULES].get(best_rule_key)
 
-        active_loop_name = tracker.active_loop_name
-        if active_loop_name:
+        if active_loop_name := tracker.active_loop_name:
             # find rules for unhappy path of the loop
             loop_unhappy_keys = self._get_possible_keys(
                 self.lookup[RULES_FOR_LOOP_UNHAPPY_PATH], states
@@ -1219,11 +1208,8 @@ class RulePolicy(MemoizationPolicy):
             events=[LoopInterrupted(True)] if returning_from_unhappy_path else [],
             is_end_to_end_prediction=is_end_to_end_prediction,
             is_no_user_prediction=is_no_user_prediction,
-            hide_rule_turn=(
-                True
-                if prediction_source in self.lookup.get(RULES_NOT_IN_STORIES, [])
-                else False
-            ),
+            hide_rule_turn=prediction_source
+            in self.lookup.get(RULES_NOT_IN_STORIES, []),
         )
 
     def _default_predictions(self, domain: Domain) -> List[float]:

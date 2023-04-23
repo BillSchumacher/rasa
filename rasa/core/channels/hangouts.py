@@ -38,7 +38,7 @@ class HangoutsOutput(OutputChannel):
     @staticmethod
     def _text_card(message: Dict[Text, Any]) -> Dict:
 
-        card = {
+        return {
             "cards": [
                 {
                     "sections": [
@@ -47,14 +47,14 @@ class HangoutsOutput(OutputChannel):
                 }
             ]
         }
-        return card
 
     @staticmethod
     def _image_card(image: Text) -> Dict:
-        card = {
-            "cards": [{"sections": [{"widgets": [{"image": {"imageUrl": image}}]}]}]
+        return {
+            "cards": [
+                {"sections": [{"widgets": [{"image": {"imageUrl": image}}]}]}
+            ]
         }
-        return card
 
     @staticmethod
     def _text_button_card(text: Text, buttons: List) -> Union[Dict, None]:
@@ -77,7 +77,7 @@ class HangoutsOutput(OutputChannel):
                 }
             )
 
-        card = {
+        return {
             "cards": [
                 {
                     "sections": [
@@ -91,7 +91,6 @@ class HangoutsOutput(OutputChannel):
                 }
             ]
         }
-        return card
 
     @staticmethod
     def _combine_cards(c1: Dict, c2: Dict) -> Dict:
@@ -191,10 +190,7 @@ class HangoutsInput(InputChannel):
     @classmethod
     def from_credentials(cls, credentials: Optional[Dict[Text, Any]]) -> InputChannel:
 
-        if credentials:
-            return cls(credentials.get("project_id"))
-
-        return cls()
+        return cls(credentials.get("project_id")) if credentials else cls()
 
     def __init__(
         self,

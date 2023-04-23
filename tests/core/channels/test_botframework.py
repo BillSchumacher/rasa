@@ -117,7 +117,7 @@ def test_validate_auth_returns_unauthorized_for_invalid_jwt_token(
     assert resp is not None
     assert resp.status == HTTPStatus.UNAUTHORIZED
     assert resp.body.decode() == "Could not validate JWT token."
-    assert [msg for msg in caplog.messages] == [
+    assert list(caplog.messages) == [
         "Bot framework JWT token could not be verified.",
         "The token is not yet valid (nbf)",
     ]

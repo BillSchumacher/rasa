@@ -34,17 +34,13 @@ def create_http_input_channels(
     else:
         all_credentials = {}
 
-    if channel:
-        if len(all_credentials) > 1:
-            logger.info(
-                "Connecting to channel '{}' which was specified by the "
-                "'--connector' argument. Any other channels will be ignored. "
-                "To connect to all given channels, omit the '--connector' "
-                "argument.".format(channel)
-            )
-        return [_create_single_channel(channel, all_credentials.get(channel))]
-    else:
+    if not channel:
         return [_create_single_channel(c, k) for c, k in all_credentials.items()]
+    if len(all_credentials) > 1:
+        logger.info(
+            f"Connecting to channel '{channel}' which was specified by the '--connector' argument. Any other channels will be ignored. To connect to all given channels, omit the '--connector' argument."
+        )
+    return [_create_single_channel(channel, all_credentials.get(channel))]
 
 
 def _create_single_channel(channel: Text, credentials: Dict[Text, Any]) -> Any:
@@ -52,21 +48,20 @@ def _create_single_channel(channel: Text, credentials: Dict[Text, Any]) -> Any:
 
     if channel in BUILTIN_CHANNELS:
         return BUILTIN_CHANNELS[channel].from_credentials(credentials)
-    else:
-        # try to load channel based on class name
-        try:
-            input_channel_class = rasa.shared.utils.common.class_from_module_path(
-                channel
-            )
-            return input_channel_class.from_credentials(credentials)
-        except (AttributeError, ImportError):
-            raise RasaException(
-                f"Failed to find input channel class for '{channel}'. Unknown "
-                f"input channel. Check your credentials configuration to "
-                f"make sure the mentioned channel is not misspelled. "
-                f"If you are creating your own channel, make sure it "
-                f"is a proper name of a class in a module."
-            )
+    # try to load channel based on class name
+    try:
+        input_channel_class = rasa.shared.utils.common.class_from_module_path(
+            channel
+        )
+        return input_channel_class.from_credentials(credentials)
+    except (AttributeError, ImportError):
+        raise RasaException(
+            f"Failed to find input channel class for '{channel}'. Unknown "
+            f"input channel. Check your credentials configuration to "
+            f"make sure the mentioned channel is not misspelled. "
+            f"If you are creating your own channel, make sure it "
+            f"is a proper name of a class in a module."
+        )
 
 
 def _create_app_without_api(cors: Optional[Union[Text, List[Text]]] = None) -> Sanic:
@@ -270,6 +265,5 @@ async def close_resources(app: Sanic, _: AbstractEventLoop) -> None:
         logger.debug("No agent found when shutting down server.")
         return
 
-    event_broker = current_agent.tracker_store.event_broker
-    if event_broker:
+    if event_broker := current_agent.tracker_store.event_broker:
         await event_broker.close()

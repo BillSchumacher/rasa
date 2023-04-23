@@ -627,7 +627,7 @@ async def test_update_tracker_session_with_metadata(
     )
     final_expected = with_assistant_ids(with_model_ids_expected, assistant_id)
 
-    assert events[0:5] == final_expected[0:5]
+    assert events[:5] == final_expected[:5]
     assert tracker.slots[SESSION_START_METADATA_SLOT].value == message_metadata
     assert events[2].metadata == {
         ASSISTANT_ID_KEY: assistant_id,
@@ -1137,13 +1137,7 @@ async def test_policy_events_are_applied_to_tracker(
 
 
 # noinspection PyTypeChecker
-@pytest.mark.parametrize(
-    "reject_fn",
-    [
-        lambda: [ActionExecutionRejected(ACTION_LISTEN_NAME)],
-        lambda: (_ for _ in ()).throw(ActionExecutionRejection(ACTION_LISTEN_NAME)),
-    ],
-)
+@pytest.mark.parametrize("reject_fn", [lambda: [ActionExecutionRejected(ACTION_LISTEN_NAME)], lambda: iter(()).throw(ActionExecutionRejection(ACTION_LISTEN_NAME))])
 async def test_policy_events_not_applied_if_rejected(
     default_processor: MessageProcessor,
     monkeypatch: MonkeyPatch,
@@ -1880,4 +1874,4 @@ async def test_processor_fetch_full_tracker_with_initial_session_existing_tracke
 
     tracker = await default_processor.fetch_full_tracker_with_initial_session(sender_id)
     assert tracker.sender_id == sender_id
-    assert all([event in expected_events for event in tracker.events])
+    assert all(event in expected_events for event in tracker.events)

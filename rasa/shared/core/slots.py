@@ -62,10 +62,7 @@ class Slot(ABC):
             The number of features. `0` if the slot is unfeaturized. The dimensionality
             of the array returned by `as_feature` needs to correspond to this value.
         """
-        if not self.influence_conversation:
-            return 0
-
-        return self._feature_dimensionality()
+        return self._feature_dimensionality() if self.influence_conversation else 0
 
     def _feature_dimensionality(self) -> int:
         """See the docstring for `feature_dimensionality`."""
@@ -83,23 +80,12 @@ class Slot(ABC):
         return self._value_reset_delay
 
     def as_feature(self) -> List[float]:
-        if not self.influence_conversation:
-            return []
-
-        return self._as_feature()
+        return self._as_feature() if self.influence_conversation else []
 
     @abstractmethod
     def _as_feature(self) -> List[float]:
         raise NotImplementedError(
-            "Each slot type needs to specify how its "
-            "value can be converted to a feature. Slot "
-            "'{}' is a generic slot that can not be used "
-            "for predictions. Make sure you add this "
-            "slot to your domain definition, specifying "
-            "the type of the slot. If you implemented "
-            "a custom slot type class, make sure to "
-            "implement `.as_feature()`."
-            "".format(self.name)
+            f"Each slot type needs to specify how its value can be converted to a feature. Slot '{self.name}' is a generic slot that can not be used for predictions. Make sure you add this slot to your domain definition, specifying the type of the slot. If you implemented a custom slot type class, make sure to implement `.as_feature()`."
         )
 
     def reset(self) -> None:
@@ -161,7 +147,7 @@ class Slot(ABC):
             fingerprint of the slot
         """
         data = {"slot_name": self.name, "slot_value": self.value}
-        data.update(self.persistence_info())
+        data |= self.persistence_info()
         return rasa.shared.utils.io.get_dictionary_fingerprint(data)
 
 
@@ -194,10 +180,7 @@ class FloatSlot(Slot):
 
         if min_value >= max_value:
             raise InvalidSlotConfigError(
-                "Float slot ('{}') created with an invalid range "
-                "using min ({}) and max ({}) values. Make sure "
-                "min is smaller than max."
-                "".format(self.name, self.min_value, self.max_value)
+                f"Float slot ('{self.name}') created with an invalid range using min ({self.min_value}) and max ({self.max_value}) values. Make sure min is smaller than max."
             )
 
         if initial_value is not None and not (min_value <= initial_value <= max_value):
@@ -279,10 +262,7 @@ class ListSlot(Slot):
 
     def _as_feature(self) -> List[float]:
         try:
-            if self.value is not None and len(self.value) > 0:
-                return [1.0]
-            else:
-                return [0.0]
+            return [1.0] if self.value is not None and len(self.value) > 0 else [0.0]
         except (TypeError, ValueError):
             # we couldn't convert the value to a list - using default value
             return [0.0]
@@ -433,14 +413,15 @@ class AnySlot(Slot):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, AnySlot):
-            return NotImplemented
-
         return (
-            self.name == other.name
-            and self.initial_value == other.initial_value
-            and self._value_reset_delay == other._value_reset_delay
-            and self.value == other.value
+            (
+                self.name == other.name
+                and self.initial_value == other.initial_value
+                and self._value_reset_delay == other._value_reset_delay
+                and self.value == other.value
+            )
+            if isinstance(other, AnySlot)
+            else NotImplemented
         )
 
     def _as_feature(self) -> List[float]:

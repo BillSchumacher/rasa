@@ -28,7 +28,7 @@ class Emulator:
             else:
                 _data["model"] = data["model"]
 
-        _data["time"] = data["time"] if "time" in data else None
+        _data["time"] = data.get("time", None)
         return _data
 
     def normalise_response_json(self, data: Dict[Text, Any]) -> Dict[Text, Any]:
@@ -44,4 +44,4 @@ class Emulator:
 
     def __str__(self) -> Text:
         """Return the string representation of the emulator."""
-        return "Emulator('{}')".format(self.name())
+        return f"Emulator('{self.name()}')"

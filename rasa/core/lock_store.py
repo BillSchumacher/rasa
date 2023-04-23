@@ -143,8 +143,7 @@ class LockStore:
 
     def update_lock(self, conversation_id: Text) -> None:
         """Fetch lock for `conversation_id`, remove expired tickets and save lock."""
-        lock = self.get_lock(conversation_id)
-        if lock:
+        if lock := self.get_lock(conversation_id):
             lock.remove_expired_tickets()
             self.save_lock(lock)
 
@@ -153,17 +152,14 @@ class LockStore:
 
         Alternatively, create a new one if it doesn't exist.
         """
-        existing_lock = self.get_lock(conversation_id)
-
-        if existing_lock:
+        if existing_lock := self.get_lock(conversation_id):
             return existing_lock
 
         return self.create_lock(conversation_id)
 
     def is_someone_waiting(self, conversation_id: Text) -> bool:
         """Return whether someone is waiting for lock for this `conversation_id`."""
-        lock = self.get_lock(conversation_id)
-        if lock:
+        if lock := self.get_lock(conversation_id):
             return lock.is_someone_waiting()
 
         return False
@@ -174,8 +170,7 @@ class LockStore:
         Removes ticket from lock and saves lock.
         """
 
-        lock = self.get_lock(conversation_id)
-        if lock:
+        if lock := self.get_lock(conversation_id):
             lock.remove_ticket_for(ticket_number)
             self.save_lock(lock)
 
@@ -226,8 +221,8 @@ class RedisLockStore(LockStore):
 
         self.red = redis.StrictRedis(
             host=host,
-            port=int(port),
-            db=int(db),
+            port=port,
+            db=db,
             password=password,
             ssl=use_ssl,
             socket_timeout=socket_timeout,
@@ -242,7 +237,7 @@ class RedisLockStore(LockStore):
 
     def _set_key_prefix(self, key_prefix: Text) -> None:
         if isinstance(key_prefix, str) and key_prefix.isalnum():
-            self.key_prefix = key_prefix + ":" + DEFAULT_REDIS_LOCK_STORE_KEY_PREFIX
+            self.key_prefix = f"{key_prefix}:{DEFAULT_REDIS_LOCK_STORE_KEY_PREFIX}"
         else:
             logger.warning(
                 f"Omitting provided non-alphanumeric redis key prefix: '{key_prefix}'. "
@@ -251,8 +246,7 @@ class RedisLockStore(LockStore):
 
     def get_lock(self, conversation_id: Text) -> Optional[TicketLock]:
         """Retrieves lock (see parent docstring for more information)."""
-        serialised_lock = self.red.get(self.key_prefix + conversation_id)
-        if serialised_lock:
+        if serialised_lock := self.red.get(self.key_prefix + conversation_id):
             return TicketLock.from_dict(json.loads(serialised_lock))
 
         return None

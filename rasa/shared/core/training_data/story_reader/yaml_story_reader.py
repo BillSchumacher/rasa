@@ -284,15 +284,11 @@ class YAMLStoryReader(StoryReader):
             self._parse_bot_message(step)
         elif KEY_CHECKPOINT in step.keys():
             self._parse_checkpoint(step)
-        # This has to be after the checkpoint test as there can be a slot key within
-        # a checkpoint.
         elif KEY_SLOT_NAME in step.keys():
             self._parse_slot(step)
         elif KEY_ACTIVE_LOOP in step.keys():
             self._parse_active_loop(step[KEY_ACTIVE_LOOP])
-        elif KEY_METADATA in step.keys():
-            pass
-        else:
+        elif KEY_METADATA not in step.keys():
             rasa.shared.utils.io.raise_warning(
                 f"Issue found in '{self.source_name}':\n"
                 f"Found an unexpected step in the {self._get_item_title()} "
@@ -350,8 +346,7 @@ class YAMLStoryReader(StoryReader):
 
         for item in step.get(KEY_OR, []):
             if KEY_USER_INTENT in item.keys():
-                utterance = self._parse_raw_user_utterance(item)
-                if utterance:
+                if utterance := self._parse_raw_user_utterance(item):
                     events.append(utterance)
             elif KEY_CHECKPOINT_SLOTS in item.keys():
                 for slot in item.get(KEY_CHECKPOINT_SLOTS, []):
@@ -661,11 +656,12 @@ class YAMLStoryReader(StoryReader):
         intent_ranking = [
             {INTENT_NAME_KEY: intent_name, PREDICTED_CONFIDENCE_KEY: confidence}
         ]
-        message_data = {}
-        message_data[TEXT] = user_text
-        message_data[INTENT] = intent_data
-        message_data[INTENT_RANKING_KEY] = intent_ranking
-        message_data[ENTITIES] = entities
+        message_data = {
+            TEXT: user_text,
+            INTENT: intent_data,
+            INTENT_RANKING_KEY: intent_ranking,
+            ENTITIES: entities,
+        }
         return Message(message_data, output_properties=set(message_data.keys()))
 
     @staticmethod
@@ -710,7 +706,7 @@ class YAMLStoryReader(StoryReader):
                     f"Parsed value isn't a json object "
                     f"(instead parser found '{type(parsed_entities)}')"
                 )
-        except (JSONDecodeError, ValueError) as e:
+        except ValueError as e:
             rasa.shared.utils.io.raise_warning(
                 f"Failed to parse arguments in line '{match.string}'. "
                 f"Failed to decode parameters as a json object (dict). "
@@ -719,13 +715,12 @@ class YAMLStoryReader(StoryReader):
                 f"Error: {e}",
                 docs=DOCS_URL_STORIES,
             )
-            parsed_entities = dict()
+            parsed_entities = {}
 
         # validate the given entity types
         if domain:
             entity_types = set(parsed_entities.keys())
-            unknown_entity_types = entity_types.difference(domain.entities)
-            if unknown_entity_types:
+            if unknown_entity_types := entity_types.difference(domain.entities):
                 rasa.shared.utils.io.raise_warning(
                     f"Failed to parse arguments in line '{match.string}'. "
                     f"Expected entities from {domain.entities} "
@@ -741,24 +736,21 @@ class YAMLStoryReader(StoryReader):
 
         # convert them into the list of dictionaries that we expect
         entities: List[Dict[Text, Any]] = []
-        default_properties = {}
-        if extractor_name:
-            default_properties = {EXTRACTOR: extractor_name}
-
+        default_properties = {EXTRACTOR: extractor_name} if extractor_name else {}
         for entity_type, entity_values in parsed_entities.items():
             if not isinstance(entity_values, list):
                 entity_values = [entity_values]
 
-            for entity_value in entity_values:
-                entities.append(
-                    {
-                        ENTITY_ATTRIBUTE_TYPE: entity_type,
-                        ENTITY_ATTRIBUTE_VALUE: entity_value,
-                        ENTITY_ATTRIBUTE_START: match.start(ENTITIES),
-                        ENTITY_ATTRIBUTE_END: match.end(ENTITIES),
-                        **default_properties,
-                    }
-                )
+            entities.extend(
+                {
+                    ENTITY_ATTRIBUTE_TYPE: entity_type,
+                    ENTITY_ATTRIBUTE_VALUE: entity_value,
+                    ENTITY_ATTRIBUTE_START: match.start(ENTITIES),
+                    ENTITY_ATTRIBUTE_END: match.end(ENTITIES),
+                    **default_properties,
+                }
+                for entity_value in entity_values
+            )
         return entities
 
     @staticmethod

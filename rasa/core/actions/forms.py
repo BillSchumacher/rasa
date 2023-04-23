@@ -202,13 +202,10 @@ class FormAction(LoopAction):
         if isinstance(tracker.slots.get(slot_to_be_filled), ListSlot):
             return value
 
-        if len(value) == 0:
+        if not value:
             return None
 
-        if len(value) == 1:
-            return value[0]
-
-        return value
+        return value[0] if len(value) == 1 else value
 
     def get_slot_to_fill(self, tracker: "DialogueStateTracker") -> Optional[str]:
         """Gets the name of the slot which should be filled next.
@@ -269,11 +266,7 @@ class FormAction(LoopAction):
         _tracker = self._temporary_tracker(tracker, events, domain)
 
         _action = RemoteAction(validate_name, self.action_endpoint)
-        validate_events = await _action.run(output_channel, nlg, _tracker, domain)
-
-        # Only return the validated SlotSet events by the custom form validation action
-        # to avoid adding duplicate SlotSet events for slots that are already valid.
-        return validate_events
+        return await _action.run(output_channel, nlg, _tracker, domain)
 
     def _temporary_tracker(
         self,
@@ -316,18 +309,16 @@ class FormAction(LoopAction):
             (
                 i
                 for i, event in enumerate(reversed(tracker.events))
-                if event == Restarted() or event == tracker.latest_message
+                if event in [Restarted(), tracker.latest_message]
             ),
             len(tracker.events) - 1,
         )
         index = len(tracker.events) - index_from_end - 1
-        events_since_last_user_uttered = [
+        return [
             event
             for event in itertools.islice(tracker.events, index, None)
             if isinstance(event, SlotSet)
         ]
-
-        return events_since_last_user_uttered
 
     def _update_slot_values(
         self,
@@ -344,9 +335,7 @@ class FormAction(LoopAction):
         self, tracker: "DialogueStateTracker", domain: Domain
     ) -> Set[Text]:
         required_slots = set(self.required_slots(domain))
-        requested_slot = self.get_slot_to_fill(tracker)
-
-        if requested_slot:
+        if requested_slot := self.get_slot_to_fill(tracker):
             required_slots.add(requested_slot)
 
         return required_slots
@@ -396,10 +385,8 @@ class FormAction(LoopAction):
         )
 
         some_slots_were_validated = any(
-            isinstance(event, SlotSet) and not event.key == REQUESTED_SLOT
+            isinstance(event, SlotSet) and event.key != REQUESTED_SLOT
             for event in validation_events
-            # Ignore `SlotSet`s  for `REQUESTED_SLOT` as that's not a slot which needs
-            # to be filled by the user.
         )
 
         # extract requested slot
@@ -537,14 +524,13 @@ class FormAction(LoopAction):
             and not tracker.is_active_loop_interrupted
         )
 
-        if needs_validation:
-            logger.debug(f"Validating user input '{tracker.latest_message}'.")
-            return await self.validate(tracker, domain, output_channel, nlg)
-        else:
+        if not needs_validation:
             # Needed to determine which slots to request although there are no slots
             # to actually validate, which happens when coming back to the form after
             # an unhappy path
             return await self.validate_slots({}, tracker, domain, output_channel, nlg)
+        logger.debug(f"Validating user input '{tracker.latest_message}'.")
+        return await self.validate(tracker, domain, output_channel, nlg)
 
     @staticmethod
     def _should_request_slot(tracker: "DialogueStateTracker", slot_name: Text) -> bool:
@@ -576,9 +562,6 @@ class FormAction(LoopAction):
             Events from the activation.
         """
         logger.debug(f"Activated the form '{self.name()}'.")
-        # collect values of required slots filled before activation
-        prefilled_slots = {}
-
         action_extract_slots = action.action_for_name_or_text(
             ACTION_EXTRACT_SLOTS, domain, self.action_endpoint
         )
@@ -599,10 +582,11 @@ class FormAction(LoopAction):
 
         tracker.update_with_events(extraction_events, domain)
 
-        for slot_name in self.required_slots(domain):
-            if not self._should_request_slot(tracker, slot_name):
-                prefilled_slots[slot_name] = tracker.get_slot(slot_name)
-
+        prefilled_slots = {
+            slot_name: tracker.get_slot(slot_name)
+            for slot_name in self.required_slots(domain)
+            if not self._should_request_slot(tracker, slot_name)
+        }
         if not prefilled_slots:
             logger.debug("No pre-filled required slots to validate.")
             return [e for e in extraction_events if isinstance(e, SlotSet)]
@@ -632,7 +616,6 @@ class FormAction(LoopAction):
         events_so_far: List[Event],
     ) -> List[Event]:
         """Executes form loop after activation."""
-        events: List[Event] = []
         """
         Call to validation is not required when the slots are already validated
         at the time of form activation.
@@ -646,11 +629,13 @@ class FormAction(LoopAction):
         filtered_events = [
             event for event in events_so_far if not isinstance(event, ActiveLoop)
         ]
-        if not filtered_events:
-            events = await self._validate_if_required(
+        events = (
+            []
+            if filtered_events
+            else await self._validate_if_required(
                 tracker, domain, output_channel, nlg
             )
-
+        )
         if not self._user_rejected_manually(events):
             events += await self.request_next_slot(
                 tracker, domain, output_channel, nlg, events_so_far + events

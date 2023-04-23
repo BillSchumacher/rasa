@@ -97,8 +97,7 @@ class BytePairFeaturizer(DenseFeaturizer, GraphComponent):
 
     def _create_word_vector(self, document: Text) -> np.ndarray:
         """Creates a word vector from a text. Utility method."""
-        encoded_ids = self.model.encode_ids(document)
-        if encoded_ids:
+        if encoded_ids := self.model.encode_ids(document):
             return self.model.vectors[encoded_ids[0]]
 
         return np.zeros((self.component_config["dim"],), dtype=np.float32)

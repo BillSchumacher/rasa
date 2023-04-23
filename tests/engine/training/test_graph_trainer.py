@@ -306,7 +306,7 @@ def test_graph_trainer_with_non_cacheable_components(
 
 
 def node_call_counts(mocks: Dict[Text, Mock]) -> Dict[Text, int]:
-    return {node_name: mocks[node_name].call_count for node_name, mock in mocks.items()}
+    return {node_name: mocks[node_name].call_count for node_name in mocks}
 
 
 @pytest.fixture
@@ -426,7 +426,7 @@ def test_graph_trainer_train_logging(
         filter(lambda x: x[1] == logging.INFO, caplog.record_tuples)
     )
 
-    caplog_messages = list([record[2] for record in caplog_info_records])
+    caplog_messages = [record[2] for record in caplog_info_records]
 
     assert caplog_messages == [
         "Starting to train component 'SubtractByX'.",
@@ -483,7 +483,7 @@ def test_graph_trainer_train_logging_with_cached_components(
         caplog_info_records = list(
             filter(lambda x: x[1] == logging.INFO, caplog.record_tuples)
         )
-        caplog_messages_set = set([record[2] for record in caplog_info_records])
+        caplog_messages_set = {record[2] for record in caplog_info_records}
 
         assert caplog_messages_set == {
             "Starting to train component 'SubtractByX'.",

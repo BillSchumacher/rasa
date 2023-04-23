@@ -43,12 +43,13 @@ def print_buttons(
         choices = cli_utils.button_choices_from_message_data(
             message, allow_free_text_input=True
         )
-        question = questionary.select(
+        return questionary.select(
             message.get("text"),
             choices,
-            style=Style([("qmark", "#6d91d3"), ("", "#6d91d3"), ("answer", "#b373d6")]),
+            style=Style(
+                [("qmark", "#6d91d3"), ("", "#6d91d3"), ("answer", "#b373d6")]
+            ),
         )
-        return question
     else:
         rasa.shared.utils.cli.print_color("Buttons:", color=color)
         for idx, button in enumerate(message.get("buttons")):
@@ -64,8 +65,7 @@ def _print_bot_output(
     color: Text = rasa.shared.utils.io.bcolors.OKBLUE,
 ) -> Optional[questionary.Question]:
     if "buttons" in message:
-        question = print_buttons(message, is_latest_message, color)
-        if question:
+        if question := print_buttons(message, is_latest_message, color):
             return question
 
     if "text" in message:
@@ -194,11 +194,10 @@ async def record_messages(
     request_timeout: Optional[int] = None,
 ) -> int:
     """Read messages from the command line and print bot responses."""
-    exit_text = INTENT_MESSAGE_PREFIX + "stop"
+    exit_text = f"{INTENT_MESSAGE_PREFIX}stop"
 
     rasa.shared.utils.cli.print_success(
-        "Bot loaded. Type a message and press enter "
-        "(use '{}' to exit): ".format(exit_text)
+        f"Bot loaded. Type a message and press enter (use '{exit_text}' to exit): "
     )
 
     num_messages = 0

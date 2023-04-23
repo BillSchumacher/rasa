@@ -167,10 +167,10 @@ class Exporter:
             the tracker store.
 
         """
-        missing_ids_in_tracker_store = (
-            set(self.requested_conversation_ids) - conversation_ids_in_tracker_store
-        )
-        if missing_ids_in_tracker_store:
+        if missing_ids_in_tracker_store := (
+            set(self.requested_conversation_ids)
+            - conversation_ids_in_tracker_store
+        ):
             rasa.shared.utils.cli.print_warning(
                 f"Could not find the following requested "
                 f"conversation IDs in connected tracker store: "
@@ -198,17 +198,15 @@ class Exporter:
 
         self._validate_all_requested_ids_exist(conversation_ids_in_tracker_store)
 
-        conversation_ids_to_process = conversation_ids_in_tracker_store & set(
+        if conversation_ids_to_process := conversation_ids_in_tracker_store & set(
             self.requested_conversation_ids
-        )
-
-        if not conversation_ids_to_process:
+        ):
+            return conversation_ids_to_process
+        else:
             raise NoEventsToMigrateError(
                 "Could not find an overlap between the requested "
                 "conversation IDs and those found in the tracker store. Exiting."
             )
-
-        return conversation_ids_to_process
 
     async def _fetch_events_within_time_range(self) -> AsyncIterator[Dict[Text, Any]]:
         """Fetch all events for `conversation_ids` within the supplied time range.

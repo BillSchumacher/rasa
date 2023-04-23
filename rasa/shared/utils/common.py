@@ -62,7 +62,7 @@ def all_subclasses(cls: Any) -> List[Any]:
 
 def module_path_from_instance(inst: Any) -> Text:
     """Return the module path of an instance's class."""
-    return inst.__module__ + "." + inst.__class__.__name__
+    return f"{inst.__module__}.{inst.__class__.__name__}"
 
 
 def sort_list_of_dicts_by_first_key(dicts: List[Dict]) -> List[Dict]:
@@ -77,7 +77,7 @@ def lazy_property(function: Callable) -> Any:
     will happen once, on the first call of the property. All
     succeeding calls will use the value stored in the private property.
     """
-    attr_name = "_lazy_" + function.__name__
+    attr_name = f"_lazy_{function.__name__}"
 
     def _lazyprop(self: Any) -> Any:
         if not hasattr(self, attr_name):
@@ -245,7 +245,7 @@ def merge_dicts(
 
     else:
         merged_dicts, b = tempDict2.copy(), tempDict1.copy()
-    merged_dicts.update(b)
+    merged_dicts |= b
     return merged_dicts
 
 

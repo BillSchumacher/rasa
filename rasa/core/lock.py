@@ -134,6 +134,5 @@ class TicketLock:
 
     def remove_ticket_for(self, ticket_number: int) -> None:
         """Remove `Ticket` for `ticket_number."""
-        ticket = self._ticket_for_ticket_number(ticket_number)
-        if ticket:
+        if ticket := self._ticket_for_ticket_number(ticket_number):
             self.tickets.remove(ticket)

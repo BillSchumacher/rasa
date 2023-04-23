@@ -111,8 +111,7 @@ def deserialise_events(serialized_events: List[Dict[Text, Any]]) -> List["Event"
 
     for e in serialized_events:
         if "event" in e:
-            event = Event.from_parameters(e)
-            if event:
+            if event := Event.from_parameters(e):
                 deserialised.append(event)
             else:
                 logger.warning(
@@ -192,13 +191,13 @@ def split_events(
             return False
 
         # the type is correct and there are no further conditions
-        if not additional_splitting_conditions:
-            return True
-
-        # there are further conditions - check those
-        return all(
-            getattr(evt, k, None) == v
-            for k, v in additional_splitting_conditions.items()
+        return (
+            all(
+                getattr(evt, k, None) == v
+                for k, v in additional_splitting_conditions.items()
+            )
+            if additional_splitting_conditions
+            else True
         )
 
     for event in events:
@@ -289,10 +288,7 @@ class Event(ABC):
     ) -> Optional[List["Event"]]:
         event_class = Event.resolve_by_type(event_name, default)
 
-        if not event_class:
-            return None
-
-        return event_class._from_story_string(parameters)
+        return event_class._from_story_string(parameters) if event_class else None
 
     @staticmethod
     def from_parameters(
@@ -304,10 +300,7 @@ class Event(ABC):
             return None
 
         event_class: Optional[Type[Event]] = Event.resolve_by_type(event_name, default)
-        if not event_class:
-            return None
-
-        return event_class._from_parameters(parameters)
+        return event_class._from_parameters(parameters) if event_class else None
 
     @classmethod
     def _from_story_string(
@@ -393,10 +386,7 @@ class AlwaysEqualEventMixin(Event, ABC):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, self.__class__):
-            return NotImplemented
-
-        return True
+        return True if isinstance(other, self.__class__) else NotImplemented
 
 
 class SkipEventInMDStoryMixin(Event, ABC):
@@ -515,19 +505,21 @@ class UserUttered(Event):
     # and entities but _different_ timestamps will be considered equal.
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, UserUttered):
-            return NotImplemented
-
         return (
-            self.text,
-            self.intent_name,
-            [
-                jsonpickle.encode(sorted(ent)) for ent in self.entities
-            ],  # TODO: test? Or fix in regex_message_handler?
-        ) == (
-            other.text,
-            other.intent_name,
-            [jsonpickle.encode(sorted(ent)) for ent in other.entities],
+            (
+                self.text,
+                self.intent_name,
+                [
+                    jsonpickle.encode(sorted(ent)) for ent in self.entities
+                ],  # TODO: test? Or fix in regex_message_handler?
+            )
+            == (
+                other.text,
+                other.intent_name,
+                [jsonpickle.encode(sorted(ent)) for ent in other.entities],
+            )
+            if isinstance(other, UserUttered)
+            else NotImplemented
         )
 
     def __str__(self) -> Text:
@@ -754,10 +746,11 @@ class DefinePrevUserUtteredFeaturization(SkipEventInMDStoryMixin):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, DefinePrevUserUtteredFeaturization):
-            return NotImplemented
-
-        return self.use_text_for_featurization == other.use_text_for_featurization
+        return (
+            self.use_text_for_featurization == other.use_text_for_featurization
+            if isinstance(other, DefinePrevUserUtteredFeaturization)
+            else NotImplemented
+        )
 
 
 class EntitiesAdded(SkipEventInMDStoryMixin):
@@ -793,10 +786,11 @@ class EntitiesAdded(SkipEventInMDStoryMixin):
 
     def __eq__(self, other: Any) -> bool:
         """Compares this event with another event."""
-        if not isinstance(other, EntitiesAdded):
-            return NotImplemented
-
-        return self.entities == other.entities
+        return (
+            self.entities == other.entities
+            if isinstance(other, EntitiesAdded)
+            else NotImplemented
+        )
 
     @classmethod
     def _from_parameters(cls, parameters: Dict[Text, Any]) -> "EntitiesAdded":
@@ -879,22 +873,19 @@ class BotUttered(SkipEventInMDStoryMixin):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, BotUttered):
-            return NotImplemented
-
-        return self.__members() == other.__members()
+        return (
+            self.__members() == other.__members()
+            if isinstance(other, BotUttered)
+            else NotImplemented
+        )
 
     def __str__(self) -> Text:
         """Returns text representation of event."""
-        return "BotUttered(text: {}, data: {}, metadata: {})".format(
-            self.text, json.dumps(self.data), json.dumps(self.metadata)
-        )
+        return f"BotUttered(text: {self.text}, data: {json.dumps(self.data)}, metadata: {json.dumps(self.metadata)})"
 
     def __repr__(self) -> Text:
         """Returns text representation of event for debugging."""
-        return "BotUttered('{}', {}, {}, {})".format(
-            self.text, json.dumps(self.data), json.dumps(self.metadata), self.timestamp
-        )
+        return f"BotUttered('{self.text}', {json.dumps(self.data)}, {json.dumps(self.metadata)}, {self.timestamp})"
 
     def apply_to(self, tracker: "DialogueStateTracker") -> None:
         """Applies event to current conversation state."""
@@ -981,10 +972,11 @@ class SlotSet(Event):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, SlotSet):
-            return NotImplemented
-
-        return (self.key, self.value) == (other.key, other.value)
+        return (
+            (self.key, self.value) == (other.key, other.value)
+            if isinstance(other, SlotSet)
+            else NotImplemented
+        )
 
     def as_story_string(self) -> Text:
         """Returns text representation of event."""
@@ -996,14 +988,11 @@ class SlotSet(Event):
         cls, parameters: Dict[Text, Any]
     ) -> Optional[List["SlotSet"]]:
 
-        slots = []
-        for slot_key, slot_val in parameters.items():
-            slots.append(SlotSet(slot_key, slot_val))
-
-        if slots:
-            return slots
-        else:
-            return None
+        slots = [
+            SlotSet(slot_key, slot_val)
+            for slot_key, slot_val in parameters.items()
+        ]
+        return slots if slots else None
 
     def as_dict(self) -> Dict[Text, Any]:
         """Returns serialized event."""
@@ -1153,10 +1142,11 @@ class ReminderScheduled(Event):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, ReminderScheduled):
-            return NotImplemented
-
-        return self.name == other.name
+        return (
+            self.name == other.name
+            if isinstance(other, ReminderScheduled)
+            else NotImplemented
+        )
 
     def __str__(self) -> Text:
         """Returns text representation of event."""
@@ -1252,10 +1242,11 @@ class ReminderCancelled(Event):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, ReminderCancelled):
-            return NotImplemented
-
-        return hash(self) == hash(other)
+        return (
+            hash(self) == hash(other)
+            if isinstance(other, ReminderCancelled)
+            else NotImplemented
+        )
 
     def __str__(self) -> Text:
         """Returns text representation of event."""
@@ -1398,10 +1389,11 @@ class StoryExported(Event):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, StoryExported):
-            return NotImplemented
-
-        return self.path == other.path
+        return (
+            self.path == other.path
+            if isinstance(other, StoryExported)
+            else NotImplemented
+        )
 
 
 class FollowupAction(Event):
@@ -1431,10 +1423,11 @@ class FollowupAction(Event):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, FollowupAction):
-            return NotImplemented
-
-        return self.action_name == other.action_name
+        return (
+            self.action_name == other.action_name
+            if isinstance(other, FollowupAction)
+            else NotImplemented
+        )
 
     def __str__(self) -> Text:
         """Returns text representation of event."""
@@ -1568,9 +1561,7 @@ class ActionExecuted(Event):
 
     def __repr__(self) -> Text:
         """Returns event as string for debugging."""
-        return "ActionExecuted(action: {}, policy: {}, confidence: {})".format(
-            self.action_name, self.policy, self.confidence
-        )
+        return f"ActionExecuted(action: {self.action_name}, policy: {self.policy}, confidence: {self.confidence})"
 
     def __str__(self) -> Text:
         """Returns event as human readable string."""
@@ -1582,10 +1573,11 @@ class ActionExecuted(Event):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, ActionExecuted):
-            return NotImplemented
-
-        return self.__members__() == other.__members__()
+        return (
+            self.__members__() == other.__members__()
+            if isinstance(other, ActionExecuted)
+            else NotImplemented
+        )
 
     def as_story_string(self) -> Optional[Text]:
         """Returns event in Markdown format."""
@@ -1677,19 +1669,19 @@ class AgentUttered(SkipEventInMDStoryMixin):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, AgentUttered):
-            return NotImplemented
-
-        return (self.text, jsonpickle.encode(self.data)) == (
-            other.text,
-            jsonpickle.encode(other.data),
+        return (
+            (self.text, jsonpickle.encode(self.data))
+            == (
+                other.text,
+                jsonpickle.encode(other.data),
+            )
+            if isinstance(other, AgentUttered)
+            else NotImplemented
         )
 
     def __str__(self) -> Text:
         """Returns text representation of event."""
-        return "AgentUttered(text: {}, data: {})".format(
-            self.text, json.dumps(self.data)
-        )
+        return f"AgentUttered(text: {self.text}, data: {json.dumps(self.data)})"
 
     def as_dict(self) -> Dict[Text, Any]:
         """Returns serialized event."""
@@ -1741,10 +1733,11 @@ class ActiveLoop(Event):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, ActiveLoop):
-            return NotImplemented
-
-        return self.name == other.name
+        return (
+            self.name == other.name
+            if isinstance(other, ActiveLoop)
+            else NotImplemented
+        )
 
     def as_story_string(self) -> Text:
         """Returns text representation of event."""
@@ -1838,10 +1831,11 @@ class LoopInterrupted(SkipEventInMDStoryMixin):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, LoopInterrupted):
-            return NotImplemented
-
-        return self.is_interrupted == other.is_interrupted
+        return (
+            self.is_interrupted == other.is_interrupted
+            if isinstance(other, LoopInterrupted)
+            else NotImplemented
+        )
 
     @classmethod
     def _from_parameters(cls, parameters: Dict[Text, Any]) -> "LoopInterrupted":
@@ -1938,11 +1932,7 @@ class ActionExecutionRejected(SkipEventInMDStoryMixin):
 
     def __str__(self) -> Text:
         """Returns text representation of event."""
-        return (
-            "ActionExecutionRejected("
-            "action: {}, policy: {}, confidence: {})"
-            "".format(self.action_name, self.policy, self.confidence)
-        )
+        return f"ActionExecutionRejected(action: {self.action_name}, policy: {self.policy}, confidence: {self.confidence})"
 
     def __hash__(self) -> int:
         """Returns unique hash for event."""
@@ -1950,10 +1940,11 @@ class ActionExecutionRejected(SkipEventInMDStoryMixin):
 
     def __eq__(self, other: Any) -> bool:
         """Compares object with other object."""
-        if not isinstance(other, ActionExecutionRejected):
-            return NotImplemented
-
-        return self.action_name == other.action_name
+        return (
+            self.action_name == other.action_name
+            if isinstance(other, ActionExecutionRejected)
+            else NotImplemented
+        )
 
     @classmethod
     def _from_parameters(cls, parameters: Dict[Text, Any]) -> "ActionExecutionRejected":

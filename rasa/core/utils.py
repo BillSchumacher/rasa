@@ -73,8 +73,7 @@ def one_hot(hot_idx: int, length: int, dtype: Optional[Text] = None) -> np.ndarr
     """
     if hot_idx >= length:
         raise ValueError(
-            "Can't create one hot. Index '{}' is out "
-            "of range (length '{}')".format(hot_idx, length)
+            f"Can't create one hot. Index '{hot_idx}' is out of range (length '{length}')"
         )
     r = np.zeros(length, dtype)
     r[hot_idx] = 1
@@ -253,9 +252,7 @@ class DecimalEncoder(json.JSONEncoder):
             `obj` converted to `float` if `o` is a `Decimals`, else the base class
             `default()` method.
         """
-        if isinstance(obj, Decimal):
-            return float(obj)
-        return super().default(obj)
+        return float(obj) if isinstance(obj, Decimal) else super().default(obj)
 
 
 def replace_decimals_with_floats(obj: Any) -> Any:

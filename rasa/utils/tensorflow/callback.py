@@ -82,12 +82,12 @@ class RasaModelCheckpoint(tf.keras.callbacks.Callback):
         """
         curr_metric_names = [
             k
-            for k in curr_results.keys()
+            for k in curr_results
             if k.startswith("val") and (k.endswith("_acc") or k.endswith("_f1"))
         ]
         # the "val" prefix is prepended to metrics in fit if _should_eval returns true
         # for this particular epoch
-        if len(curr_metric_names) == 0:
+        if not curr_metric_names:
             # the metrics are not validation metrics
             return False
         # initialize best_metrics_so_far with the first results

@@ -62,7 +62,7 @@ def visualize(
         nlu_training_data=nlu_training_data,
     )
 
-    full_output_path = "file://{}".format(os.path.abspath(output_path))
+    full_output_path = f"file://{os.path.abspath(output_path)}"
     logger.info(f"Finished graph creation. Saved into {full_output_path}")
 
     import webbrowser

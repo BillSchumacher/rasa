@@ -922,7 +922,7 @@ def test_migrate_folder_only_migrates_domain_files(tmp_path: Path):
 
     out_dir = tmp_path / "out_dir"
     migrate.migrate_domain_format(domain_dir, out_dir)
-    assert set(f.name for f in out_dir.iterdir()) == {"forms.yml", "slots.yml"}
+    assert {f.name for f in out_dir.iterdir()} == {"forms.yml", "slots.yml"}
     # i.e. the not-a-domain-file is not migrated
 
 
@@ -1028,7 +1028,7 @@ def test_migrate_domain_cleanups_after_raising(
     expected_to_be_removed = [call(expected_backup_path)]
     if not out_dir_exists:  # only removed if it didn't exist
         expected_to_be_removed.append(call(expected_out_path))
-    patching = [shutil, "rmtree"] if not migrating_file_only else [Path, "unlink"]
+    patching = [Path, "unlink"] if migrating_file_only else [shutil, "rmtree"]
     with patch.object(*patching) as removal:
         with pytest.raises(RasaException, match=error_msg_match):
             migrate.migrate_domain_format(domain_path, out_path)

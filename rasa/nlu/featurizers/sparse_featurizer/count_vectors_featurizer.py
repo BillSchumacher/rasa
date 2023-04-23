@@ -137,9 +137,7 @@ class CountVectorsFeaturizer(SparseFeaturizer, GraphComponent):
         OOV_words = self._config["OOV_words"]
         if OOV_words and not OOV_token:
             logger.error(
-                "The list OOV_words={} was given, but "
-                "OOV_token was not. OOV words are ignored."
-                "".format(OOV_words)
+                f"The list OOV_words={OOV_words} was given, but OOV_token was not. OOV words are ignored."
             )
             self.OOV_words = []
 
@@ -313,11 +311,8 @@ class CountVectorsFeaturizer(SparseFeaturizer, GraphComponent):
 
             # if there is some text in tokens, warn if there is no oov token
             rasa.shared.utils.io.raise_warning(
-                f"The out of vocabulary token '{self.OOV_token}' was configured, but "
-                f"could not be found in any one of the {training_data_type} "
-                f"training examples. All unseen words will be "
-                f"ignored during prediction.",
-                docs=DOCS_URL_COMPONENTS + "#countvectorsfeaturizer",
+                f"The out of vocabulary token '{self.OOV_token}' was configured, but could not be found in any one of the {training_data_type} training examples. All unseen words will be ignored during prediction.",
+                docs=f"{DOCS_URL_COMPONENTS}#countvectorsfeaturizer",
             )
 
     def _get_all_attributes_processed_tokens(
@@ -341,13 +336,10 @@ class CountVectorsFeaturizer(SparseFeaturizer, GraphComponent):
     def _convert_attribute_tokens_to_texts(
         attribute_tokens: Dict[Text, List[List[Text]]]
     ) -> Dict[Text, List[Text]]:
-        attribute_texts = {}
-
-        for attribute in attribute_tokens.keys():
-            list_of_tokens = attribute_tokens[attribute]
-            attribute_texts[attribute] = [" ".join(tokens) for tokens in list_of_tokens]
-
-        return attribute_texts
+        return {
+            attribute: [" ".join(tokens) for tokens in list_of_tokens]
+            for attribute, list_of_tokens in attribute_tokens.items()
+        }
 
     def _update_vectorizer_vocabulary(
         self, attribute: Text, new_vocabulary: Set[Text]
@@ -559,16 +551,6 @@ class CountVectorsFeaturizer(SparseFeaturizer, GraphComponent):
                 sentence_features.append(None)
                 continue
 
-            # vectorizer.transform returns a sparse matrix of size
-            # [n_samples, n_features]
-            # set input to list of tokens if sequence should be returned
-            # otherwise join all tokens to a single string and pass that as a list
-            if not tokens:
-                # attribute is not set (e.g. response not present)
-                sequence_features.append(None)
-                sentence_features.append(None)
-                continue
-
             seq_vec = self.vectorizers[attribute].transform(tokens)
             seq_vec.sort_indices()
 
@@ -672,12 +654,10 @@ class CountVectorsFeaturizer(SparseFeaturizer, GraphComponent):
 
     def _collect_vectorizer_vocabularies(self) -> Dict[Text, Optional[Dict[Text, int]]]:
         """Gets vocabulary for all attributes."""
-        attribute_vocabularies = {}
-        for attribute in self._attributes:
-            attribute_vocabularies[attribute] = self._get_attribute_vocabulary(
-                attribute
-            )
-        return attribute_vocabularies
+        return {
+            attribute: self._get_attribute_vocabulary(attribute)
+            for attribute in self._attributes
+        }
 
     @staticmethod
     def _is_any_model_trained(
@@ -735,12 +715,10 @@ class CountVectorsFeaturizer(SparseFeaturizer, GraphComponent):
             vocabulary=vocabulary,
         )
 
-        attribute_vectorizers = {}
-
-        for attribute in cls._attributes_for(parameters["analyzer"]):
-            attribute_vectorizers[attribute] = shared_vectorizer
-
-        return attribute_vectorizers
+        return {
+            attribute: shared_vectorizer
+            for attribute in cls._attributes_for(parameters["analyzer"])
+        }
 
     @classmethod
     def _create_independent_vocab_vectorizers(

@@ -29,14 +29,12 @@ def create_fallback_classifier(
     default_model_storage: ModelStorage,
     default_execution_context: ExecutionContext,
 ):
-    classifier = FallbackClassifier.create(
+    return FallbackClassifier.create(
         {**FallbackClassifier.get_default_config(), **component_config},
         default_model_storage,
         Resource("fallback"),
         default_execution_context,
     )
-
-    return classifier
 
 
 @pytest.mark.parametrize(

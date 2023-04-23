@@ -56,10 +56,7 @@ class Message:
         self.data.update(**kwargs)
         self._cached_fingerprint: Optional[Text] = None
 
-        if output_properties:
-            self.output_properties = output_properties
-        else:
-            self.output_properties = set()
+        self.output_properties = output_properties if output_properties else set()
         self.output_properties.add(TEXT)
 
     def add_features(self, features: Optional["Features"]) -> None:
@@ -130,10 +127,11 @@ class Message:
         return {key: value for key, value in d.items() if value is not None}
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, Message):
-            return False
-        else:
-            return other.fingerprint() == self.fingerprint()
+        return (
+            other.fingerprint() == self.fingerprint()
+            if isinstance(other, Message)
+            else False
+        )
 
     def __hash__(self) -> int:
         """Calculate a hash for the message.
@@ -441,10 +439,9 @@ class Message:
                 (self.data.get(INTENT) or self.data.get(RESPONSE))
                 and not self.data.get(TEXT)
             )
-            or (
-                self.data.get(TEXT)
-                and not (self.data.get(INTENT) or self.data.get(RESPONSE))
-            )
+            or self.data.get(TEXT)
+            and not self.data.get(INTENT)
+            and not self.data.get(RESPONSE)
         )
 
     def is_e2e_message(self) -> bool:

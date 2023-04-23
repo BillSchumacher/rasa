@@ -14,7 +14,9 @@ from rasa.shared.nlu.training_data.message import Message
 
 logger = logging.getLogger(__name__)
 
-DOCS_URL_MIGRATE_GOOGLE = DOCS_BASE_URL + "/migrate-from/google-dialogflow-to-rasa/"
+DOCS_URL_MIGRATE_GOOGLE = (
+    f"{DOCS_BASE_URL}/migrate-from/google-dialogflow-to-rasa/"
+)
 
 DIALOGFLOW_PACKAGE = "dialogflow_package"
 DIALOGFLOW_AGENT = "dialogflow_agent"
@@ -34,8 +36,7 @@ class DialogflowReader(TrainingDataReader):
 
         if fformat not in {DIALOGFLOW_INTENT, DIALOGFLOW_ENTITIES}:
             raise ValueError(
-                "fformat must be either {}, or {}"
-                "".format(DIALOGFLOW_INTENT, DIALOGFLOW_ENTITIES)
+                f"fformat must be either {DIALOGFLOW_INTENT}, or {DIALOGFLOW_ENTITIES}"
             )
 
         root_js = rasa.shared.utils.io.read_json_file(filename)
@@ -76,8 +77,7 @@ class DialogflowReader(TrainingDataReader):
         utterance = ""
         entities = []
         for chunk in chunks:
-            entity = self._extract_entity(chunk, len(utterance))
-            if entity:
+            if entity := self._extract_entity(chunk, len(utterance)):
                 entities.append(entity)
             utterance += chunk["text"]
 
@@ -92,9 +92,9 @@ class DialogflowReader(TrainingDataReader):
         if "meta" in chunk or "alias" in chunk:
             start = current_offset
             text = chunk["text"]
-            end = start + len(text)
             entity_type = chunk.get("alias", chunk["meta"])
             if entity_type != "@sys.ignore":
+                end = start + len(text)
                 entity = rasa.shared.nlu.training_data.util.build_entity(
                     start, end, text, entity_type
                 )
@@ -114,9 +114,11 @@ class DialogflowReader(TrainingDataReader):
         synonyms = DialogflowReader._flatten(synonyms)
         elements = [synonym for synonym in synonyms if "@" not in synonym]
 
-        if len(elements) == 0:
-            return None
-        return [{"name": entity.get("name"), "elements": elements}]
+        return (
+            [{"name": entity.get("name"), "elements": elements}]
+            if elements
+            else None
+        )
 
     @staticmethod
     def _extract_regex_features(
@@ -147,10 +149,7 @@ class DialogflowReader(TrainingDataReader):
         fn: Text, language: Text, fformat: Text
     ) -> Optional[List[Dict[Text, Any]]]:
         """Infer and load example file based on root filename and root format."""
-        if fformat == DIALOGFLOW_INTENT:
-            examples_type = "usersays"
-        else:
-            examples_type = "entries"
+        examples_type = "usersays" if fformat == DIALOGFLOW_INTENT else "entries"
         examples_fn_ending = f"_{examples_type}_{language}.json"
         examples_fn = fn.replace(".json", examples_fn_ending)
         if os.path.isfile(examples_fn):

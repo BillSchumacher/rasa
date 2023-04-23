@@ -350,7 +350,7 @@ def test_skip_caching_if_cache_size_is_zero(
     )
 
     # not even the database and no subdirectory was created ⛔️
-    assert list(tmp_path.glob("*")) == []
+    assert not list(tmp_path.glob("*"))
 
     assert cache.get_cached_output_fingerprint(fingerprint_key1) is None
 

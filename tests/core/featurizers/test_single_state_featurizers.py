@@ -139,10 +139,8 @@ def test_encode_all_labels__encoded_all_action_names_and_texts():
 
     assert len(encoded_actions) == len(domain.action_names_or_texts)
     assert all(
-        [
-            ACTION_NAME in encoded_action and ACTION_TEXT not in encoded_action
-            for encoded_action in encoded_actions
-        ]
+        ACTION_NAME in encoded_action and ACTION_TEXT not in encoded_action
+        for encoded_action in encoded_actions
     )
 
 
@@ -263,12 +261,12 @@ def test_encode_state__with_lookup__creates_features_for_intent_and_action_name(
     encoded = f.encode_state(state, precomputations=precomputations)
 
     if with_action_listen:
-        assert set(encoded.keys()) == set([INTENT, ACTION_NAME])
+        assert set(encoded.keys()) == {INTENT, ACTION_NAME}
         assert (
             encoded[INTENT][0].features != scipy.sparse.coo_matrix([[0, 0]])
         ).nnz == 0
     else:
-        assert set(encoded.keys()) == set([ACTION_NAME])
+        assert set(encoded.keys()) == {ACTION_NAME}
 
 
 @pytest.mark.parametrize("action_name", [None, "NOT_action_listen", ACTION_LISTEN_NAME])

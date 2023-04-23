@@ -27,7 +27,7 @@ def test_default_project_has_no_warnings(
     config = copy.deepcopy(default_config)
     # change default assistant id value to prevent config validation errors
     config[ASSISTANT_ID_KEY] = "some_unique_assistant_name"
-    for _, items in config.items():
+    for items in config.values():
         for item in items:
             if "epochs" in item:
                 item["epochs"] = 1

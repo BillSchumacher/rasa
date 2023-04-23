@@ -489,10 +489,7 @@ class DIETClassifier(GraphComponent, IntentClassifier, EntityExtractorMixin):
     def _find_example_for_label(
         label: Text, examples: List[Message], attribute: Text
     ) -> Optional[Message]:
-        for ex in examples:
-            if ex.get(attribute) == label:
-                return ex
-        return None
+        return next((ex for ex in examples if ex.get(attribute) == label), None)
 
     def _check_labels_features_exist(
         self, labels_example: List[Message], attribute: Text
@@ -518,26 +515,32 @@ class DIETClassifier(GraphComponent, IntentClassifier, EntityExtractorMixin):
             attribute, self.component_config[FEATURIZERS]
         )
 
-        if dense_sequence_features is not None and sparse_sequence_features is not None:
-            if (
+        if (
+            dense_sequence_features is not None
+            and sparse_sequence_features is not None
+            and (
                 dense_sequence_features.features.shape[0]
                 != sparse_sequence_features.features.shape[0]
-            ):
-                raise ValueError(
-                    f"Sequence dimensions for sparse and dense sequence features "
-                    f"don't coincide in '{message.get(TEXT)}'"
-                    f"for attribute '{attribute}'."
-                )
-        if dense_sentence_features is not None and sparse_sentence_features is not None:
-            if (
+            )
+        ):
+            raise ValueError(
+                f"Sequence dimensions for sparse and dense sequence features "
+                f"don't coincide in '{message.get(TEXT)}'"
+                f"for attribute '{attribute}'."
+            )
+        if (
+            dense_sentence_features is not None
+            and sparse_sentence_features is not None
+            and (
                 dense_sentence_features.features.shape[0]
                 != sparse_sentence_features.features.shape[0]
-            ):
-                raise ValueError(
-                    f"Sequence dimensions for sparse and dense sentence features "
-                    f"don't coincide in '{message.get(TEXT)}'"
-                    f"for attribute '{attribute}'."
-                )
+            )
+        ):
+            raise ValueError(
+                f"Sequence dimensions for sparse and dense sentence features "
+                f"don't coincide in '{message.get(TEXT)}'"
+                f"for attribute '{attribute}'."
+            )
 
         # If we don't use the transformer and we don't want to do entity recognition,
         # to speed up training take only the sentence features as feature vector.
@@ -794,9 +797,11 @@ class DIETClassifier(GraphComponent, IntentClassifier, EntityExtractorMixin):
     ) -> None:
         label_ids = []
         if training and self.component_config[INTENT_CLASSIFICATION]:
-            for example in training_data:
-                if example.get(label_attribute):
-                    label_ids.append(label_id_dict[example.get(label_attribute)])
+            label_ids.extend(
+                label_id_dict[example.get(label_attribute)]
+                for example in training_data
+                if example.get(label_attribute)
+            )
             # explicitly add last dimension to label_ids
             # to track correctly dynamic sequences
             model_data.add_features(
@@ -893,14 +898,15 @@ class DIETClassifier(GraphComponent, IntentClassifier, EntityExtractorMixin):
                 f"to continue training in finetune mode."
             )
 
-        if self.component_config.get(INTENT_CLASSIFICATION):
-            if not self._check_enough_labels(model_data):
-                logger.error(
-                    f"Cannot train '{self.__class__.__name__}'. "
-                    f"Need at least 2 different intent classes. "
-                    f"Skipping training of classifier."
-                )
-                return self._resource
+        if self.component_config.get(
+            INTENT_CLASSIFICATION
+        ) and not self._check_enough_labels(model_data):
+            logger.error(
+                f"Cannot train '{self.__class__.__name__}'. "
+                f"Need at least 2 different intent classes. "
+                f"Skipping training of classifier."
+            )
+            return self._resource
         if self.component_config.get(ENTITY_RECOGNITION):
             self.check_correct_entity_annotations(training_data)
 
@@ -916,10 +922,10 @@ class DIETClassifier(GraphComponent, IntentClassifier, EntityExtractorMixin):
                 ),
                 run_eagerly=self.component_config[RUN_EAGERLY],
             )
-        else:
-            if self.model is None:
-                raise ModelNotFound("Model could not be found. ")
+        elif self.model is None:
+            raise ModelNotFound("Model could not be found. ")
 
+        else:
             self.model.adjust_for_incremental_training(
                 data_example=self._data_example,
                 new_sparse_feature_sizes=model_data.get_sparse_feature_sizes(),
@@ -970,9 +976,7 @@ class DIETClassifier(GraphComponent, IntentClassifier, EntityExtractorMixin):
 
         # create session data from message and convert it into a batch of 1
         model_data = self._create_model_data([message], training=False)
-        if model_data.is_empty():
-            return None
-        return self.model.run_inference(model_data)
+        return None if model_data.is_empty() else self.model.run_inference(model_data)
 
     def _predict_label(
         self, predict_out: Optional[Dict[Text, tf.Tensor]]
@@ -1244,7 +1248,7 @@ class DIETClassifier(GraphComponent, IntentClassifier, EntityExtractorMixin):
             label_key=label_key, label_sub_key=label_sub_key, data=data_example
         )
 
-        model = cls._load_model_class(
+        return cls._load_model_class(
             tf_model_file,
             model_data_example,
             label_data,
@@ -1252,8 +1256,6 @@ class DIETClassifier(GraphComponent, IntentClassifier, EntityExtractorMixin):
             config,
             finetune_mode=finetune_mode,
         )
-
-        return model
 
     @classmethod
     def _load_model_class(
@@ -1340,10 +1342,11 @@ class DIET(TransformerRasaModel):
         ordered_tag_spec = []
 
         for tag_name in crf_order:
-            for tag_spec in entity_tag_specs:
-                if tag_name == tag_spec.tag_name:
-                    ordered_tag_spec.append(tag_spec)
-
+            ordered_tag_spec.extend(
+                tag_spec
+                for tag_spec in entity_tag_specs
+                if tag_name == tag_spec.tag_name
+            )
         return ordered_tag_spec
 
     def _check_data(self) -> None:
@@ -1794,11 +1797,9 @@ class DIET(TransformerRasaModel):
         }
 
         if self.config[INTENT_CLASSIFICATION]:
-            predictions.update(
-                self._batch_predict_intents(
-                    sequence_feature_lengths + sentence_feature_lengths,
-                    text_transformed,
-                )
+            predictions |= self._batch_predict_intents(
+                sequence_feature_lengths + sentence_feature_lengths,
+                text_transformed,
             )
 
         if self.config[ENTITY_RECOGNITION]:

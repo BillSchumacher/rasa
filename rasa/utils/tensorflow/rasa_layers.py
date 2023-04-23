@@ -155,7 +155,7 @@ class RasaCustomLayer(tf.keras.layers.Layer):
         new_weights = np.vstack(merged_weights)
         kernel_init = tf.constant_initializer(new_weights)
         bias_init = tf.constant_initializer(bias) if bias is not None else None
-        new_layer = layers.DenseForSparse(
+        return layers.DenseForSparse(
             name=f"sparse_to_dense.{attribute}_{feature_type}",
             reg_lambda=reg_lambda,
             units=units,
@@ -163,7 +163,6 @@ class RasaCustomLayer(tf.keras.layers.Layer):
             kernel_initializer=kernel_init,
             bias_initializer=bias_init,
         )
-        return new_layer
 
 
 class ConcatenateSparseDenseFeatures(RasaCustomLayer):
@@ -233,7 +232,7 @@ class ConcatenateSparseDenseFeatures(RasaCustomLayer):
 
         # Prepare dropout and sparse-to-dense layers if any sparse tensors are expected
         self._tf_layers: Dict[Text, tf.keras.layers.Layer] = {}
-        if any([signature.is_sparse for signature in feature_type_signature]):
+        if any(signature.is_sparse for signature in feature_type_signature):
             self._prepare_layers_for_sparse_tensors(attribute, feature_type, config)
 
     def _check_sparse_input_units(
@@ -287,12 +286,10 @@ class ConcatenateSparseDenseFeatures(RasaCustomLayer):
         their future dense number of units.
         """
         return sum(
-            [
-                config[DENSE_DIMENSION][attribute]
-                if signature.is_sparse
-                else signature.units
-                for signature in feature_type_signature
-            ]
+            config[DENSE_DIMENSION][attribute]
+            if signature.is_sparse
+            else signature.units
+            for signature in feature_type_signature
         )
 
     def _process_sparse_feature(
@@ -850,7 +847,8 @@ class RasaSequenceLayer(RasaCustomLayer):
             # IDs, othwerise sparse features are embedded by a non-trainable
             # DenseForSparse layer to create small embeddings that serve as IDs.
             expect_dense_seq_features = any(
-                [not signature.is_sparse for signature in attribute_signature[SEQUENCE]]
+                not signature.is_sparse
+                for signature in attribute_signature[SEQUENCE]
             )
             if not expect_dense_seq_features:
                 self._tf_layers[
@@ -897,15 +895,16 @@ class RasaSequenceLayer(RasaCustomLayer):
             if not isinstance(f, tf.SparseTensor):
                 return tf.stop_gradient(f)
 
-        # If no dense features are found, use a sparse feature but convert it into
-        # a dense one first.
-        for f in features:
-            if isinstance(f, tf.SparseTensor):
-                return tf.stop_gradient(
+        return next(
+            (
+                tf.stop_gradient(
                     self._tf_layers[self.SPARSE_TO_DENSE_FOR_TOKEN_IDS](f)
                 )
-
-        return None
+                for f in features
+                if isinstance(f, tf.SparseTensor)
+            ),
+            None,
+        )
 
     def _create_mlm_tensors(
         self,

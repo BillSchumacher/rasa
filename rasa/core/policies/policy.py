@@ -152,8 +152,9 @@ class Policy(GraphComponent):
         )
         featurizer_config = featurizer_configs[0]
 
-        state_featurizer_configs = featurizer_config.pop("state_featurizer", None)
-        if state_featurizer_configs:
+        if state_featurizer_configs := featurizer_config.pop(
+            "state_featurizer", None
+        ):
             state_featurizer_func = _get_featurizer_from_config(
                 state_featurizer_configs,
                 self.__class__.__name__,
@@ -199,7 +200,7 @@ class Policy(GraphComponent):
 
         params = {key: kwargs.get(key) for key in valid_keys if kwargs.get(key)}
         ignored_params = {
-            key: kwargs.get(key) for key in kwargs.keys() if not params.get(key)
+            key: kwargs.get(key) for key in kwargs if not params.get(key)
         }
         logger.debug(f"Parameters ignored by `model.fit(...)`: {ignored_params}")
         return params
@@ -250,8 +251,7 @@ class Policy(GraphComponent):
         max_training_samples = kwargs.get("max_training_samples")
         if max_training_samples is not None:
             logger.debug(
-                "Limit training data to {} training samples."
-                "".format(max_training_samples)
+                f"Limit training data to {max_training_samples} training samples."
             )
             state_features = state_features[:max_training_samples]
             label_ids = label_ids[:max_training_samples]
@@ -412,7 +412,7 @@ class Policy(GraphComponent):
                 if (Path(path) / FEATURIZER_FILE).is_file():
                     featurizer = TrackerFeaturizer.load(path)
 
-                config.update(kwargs)
+                config |= kwargs
 
         except (ValueError, FileNotFoundError, FileIOException):
             logger.debug(
@@ -448,8 +448,8 @@ class Policy(GraphComponent):
         formatted_states = [""]
         if states:
             for index, state in enumerate(states):
-                state_messages = []
                 if state:
+                    state_messages = []
                     if USER in state:
                         if TEXT in state[USER]:
                             state_messages.append(
@@ -578,21 +578,22 @@ class PolicyPrediction:
         Returns:
             `True` if other has the same type and the values are the same.
         """
-        if not isinstance(other, PolicyPrediction):
-            return False
-
         return (
-            self.probabilities == other.probabilities
-            and self.policy_name == other.policy_name
-            and self.policy_priority == other.policy_priority
-            and self.events == other.events
-            and self.optional_events == other.optional_events
-            and self.is_end_to_end_prediction == other.is_end_to_end_prediction
-            and self.is_no_user_prediction == other.is_no_user_prediction
-            and self.hide_rule_turn == other.hide_rule_turn
-            and self.action_metadata == other.action_metadata
-            # We do not compare `diagnostic_data`, because it has no effect on the
-            # action prediction.
+            (
+                self.probabilities == other.probabilities
+                and self.policy_name == other.policy_name
+                and self.policy_priority == other.policy_priority
+                and self.events == other.events
+                and self.optional_events == other.optional_events
+                and self.is_end_to_end_prediction == other.is_end_to_end_prediction
+                and self.is_no_user_prediction == other.is_no_user_prediction
+                and self.hide_rule_turn == other.hide_rule_turn
+                and self.action_metadata == other.action_metadata
+                # We do not compare `diagnostic_data`, because it has no effect on the
+                # action prediction.
+            )
+            if isinstance(other, PolicyPrediction)
+            else False
         )
 
     @property
@@ -654,8 +655,6 @@ def _get_featurizer_from_config(
 
     featurizer_config = config[0]
     featurizer_name = featurizer_config.pop("name")
-    featurizer_func = rasa.shared.utils.common.class_from_module_path(
+    return rasa.shared.utils.common.class_from_module_path(
         featurizer_name, lookup_path=lookup_path
     )
-
-    return featurizer_func

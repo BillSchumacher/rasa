@@ -82,7 +82,7 @@ class DefaultV1RecipeValidator(GraphComponent):
            graph_schema: a graph schema
         """
         self._graph_schema = graph_schema
-        self._component_types = set(node.uses for node in graph_schema.nodes.values())
+        self._component_types = {node.uses for node in graph_schema.nodes.values()}
         self._policy_schema_nodes: List[SchemaNode] = [
             node
             for node in self._graph_schema.nodes.values()
@@ -156,21 +156,24 @@ class DefaultV1RecipeValidator(GraphComponent):
                 docs=DOCS_URL_COMPONENTS,
             )
 
-        if training_data.entity_examples and self._component_types.isdisjoint(
-            {DIETClassifier, CRFEntityExtractor}
+        if (
+            training_data.entity_examples
+            and self._component_types.isdisjoint(
+                {DIETClassifier, CRFEntityExtractor}
+            )
+            and training_data.entity_roles_groups_used()
         ):
-            if training_data.entity_roles_groups_used():
-                rasa.shared.utils.io.raise_warning(
-                    f"You have defined training data with entities that "
-                    f"have roles/groups, but your NLU configuration does not "
-                    f"include a '{DIETClassifier.__name__}' "
-                    f"or a '{CRFEntityExtractor.__name__}'. "
-                    f"To train entities that have roles/groups, "
-                    f"add either '{DIETClassifier.__name__}' "
-                    f"or '{CRFEntityExtractor.__name__}' to your "
-                    f"configuration.",
-                    docs=DOCS_URL_COMPONENTS,
-                )
+            rasa.shared.utils.io.raise_warning(
+                f"You have defined training data with entities that "
+                f"have roles/groups, but your NLU configuration does not "
+                f"include a '{DIETClassifier.__name__}' "
+                f"or a '{CRFEntityExtractor.__name__}'. "
+                f"To train entities that have roles/groups, "
+                f"add either '{DIETClassifier.__name__}' "
+                f"or '{CRFEntityExtractor.__name__}' to your "
+                f"configuration.",
+                docs=DOCS_URL_COMPONENTS,
+            )
 
         if training_data.regex_features and self._component_types.isdisjoint(
             [RegexFeaturizer, RegexEntityExtractor]
@@ -390,7 +393,7 @@ class DefaultV1RecipeValidator(GraphComponent):
 
     def _warn_if_no_rule_policy_is_contained(self) -> None:
         """Warns if there is no rule policy among the given policies."""
-        if not any(node.uses == RulePolicy for node in self._policy_schema_nodes):
+        if all(node.uses != RulePolicy for node in self._policy_schema_nodes):
             rasa.shared.utils.io.raise_warning(
                 f"'{RulePolicy.__name__}' is not included in the model's "
                 f"policy configuration. Default intents such as "

@@ -237,17 +237,14 @@ async def trained_default_agent_model(
     trained_async: Callable,
     simple_config_path: Text,
 ) -> Text:
-    model_path = await trained_async(
+    return await trained_async(
         domain_path, simple_config_path, [stories_path, nlu_data_path]
     )
-
-    return model_path
 
 
 @pytest.fixture()
 def empty_agent() -> Agent:
-    agent = Agent(domain=Domain.load("data/test_domains/default_with_slots.yml"))
-    return agent
+    return Agent(domain=Domain.load("data/test_domains/default_with_slots.yml"))
 
 
 def reset_conversation_state(agent: Agent) -> Agent:
@@ -397,13 +394,11 @@ async def trained_rasa_model(
     stories_path: Text,
     stack_config_path: Text,
 ) -> Text:
-    trained_stack_model_path = await trained_async(
+    return await trained_async(
         domain=domain_path,
         config=stack_config_path,
         training_files=[nlu_data_path, stories_path],
     )
-
-    return trained_stack_model_path
 
 
 @pytest.fixture(scope="session")
@@ -413,11 +408,11 @@ async def trained_core_model(
     stack_config_path: Text,
     stories_path: Text,
 ) -> Text:
-    trained_core_model_path = await trained_async(
-        domain=domain_path, config=stack_config_path, training_files=[stories_path]
+    return await trained_async(
+        domain=domain_path,
+        config=stack_config_path,
+        training_files=[stories_path],
     )
-
-    return trained_core_model_path
 
 
 @pytest.fixture(scope="session")
@@ -427,11 +422,11 @@ async def trained_nlu_model(
     nlu_data_path: Text,
     stack_config_path: Text,
 ) -> Text:
-    trained_nlu_model_path = await trained_async(
-        domain=domain_path, config=stack_config_path, training_files=[nlu_data_path]
+    return await trained_async(
+        domain=domain_path,
+        config=stack_config_path,
+        training_files=[nlu_data_path],
     )
-
-    return trained_nlu_model_path
 
 
 @pytest.fixture(scope="session")
@@ -521,19 +516,17 @@ def rasa_server_secured(default_agent: Agent) -> Sanic:
 
 @pytest.fixture
 def test_public_key() -> Text:
-    test_public_key = """-----BEGIN PUBLIC KEY-----
+    return """-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC34ht9inqGq79HecpyOAnu2Cgv
 jvgcpFifpFLPmCNdiomAgE48tfUAXJRoOGlVtrqc8KgQWjTFLjqDjUh1sBFF69Fl
 wQGt7pgH10ZbERWpMTAbpjI9EoH74gDcmZ6Fy1VgQPbAwty3liw5Q5zqZLj7JhuX
 Sa0EqvZQP+Hnayab7QIDAQAB
 -----END PUBLIC KEY-----"""
 
-    return test_public_key
-
 
 @pytest.fixture
 def test_private_key() -> Text:
-    test_private_key = """-----BEGIN RSA PRIVATE KEY-----
+    return """-----BEGIN RSA PRIVATE KEY-----
 MIICXQIBAAKBgQC34ht9inqGq79HecpyOAnu2CgvjvgcpFifpFLPmCNdiomAgE48
 tfUAXJRoOGlVtrqc8KgQWjTFLjqDjUh1sBFF69FlwQGt7pgH10ZbERWpMTAbpjI9
 EoH74gDcmZ6Fy1VgQPbAwty3liw5Q5zqZLj7JhuXSa0EqvZQP+Hnayab7QIDAQAB
@@ -548,8 +541,6 @@ xSK4d+tP0AwWvioUlxPX0OJ5MF51K7LJ1qf4K072d6O2r2fMyXU4vdBPVqAjjjFU
 K+0qlG8zMkV5kCV8pT/VAkA8bM5KRa73JY0bfGX4i8UZMFHzIq2KGjHlRES4vd+L
 h18+hpcBAAyUR/jDT8nnG5YaYFz8rf2DnOy+elmmaYVm
 -----END RSA PRIVATE KEY-----"""
-
-    return test_private_key
 
 
 @pytest.fixture
@@ -578,12 +569,11 @@ def rasa_server_secured_asymmetric(
 @pytest.fixture
 def encoded_jwt(test_private_key: Text, asymmetric_jwt_method: Text) -> Text:
     payload = {"user": {"username": "myuser", "role": "admin"}}
-    encoded_jwt = jwt.encode(
+    return jwt.encode(
         payload=payload,
         key=test_private_key,
         algorithm=asymmetric_jwt_method,
     )
-    return encoded_jwt
 
 
 @pytest.fixture

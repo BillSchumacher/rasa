@@ -123,7 +123,7 @@ class EntitySynonymMapper(GraphComponent, EntityExtractorMixin):
                     synonyms = None
                     rasa.shared.utils.io.raise_warning(
                         f"Failed to load synonyms file from '{entity_synonyms_file}'.",
-                        docs=DOCS_URL_TRAINING_DATA + "#synonyms",
+                        docs=f"{DOCS_URL_TRAINING_DATA}#synonyms",
                     )
         except ValueError:
             logger.debug(
@@ -147,32 +147,27 @@ class EntitySynonymMapper(GraphComponent, EntityExtractorMixin):
 
         Lowercase is used as keys to make the lookup case-insensitive.
         """
-        if synonym is not None:
-            entity = str(entity)
-            synonym = str(synonym)
-            if entity != synonym:
-                entity_lowercase = entity.lower()
-                if (
+        if synonym is None:
+            return
+        entity = str(entity)
+        synonym = str(synonym)
+        if entity != synonym:
+            entity_lowercase = entity.lower()
+            if (
                     entity_lowercase in self.synonyms
                     and self.synonyms[entity_lowercase] != synonym
                 ):
-                    rasa.shared.utils.io.raise_warning(
-                        f"Found conflicting synonym definitions "
-                        f"for {repr(entity_lowercase)}. Overwriting target "
-                        f"{repr(self.synonyms[entity_lowercase])} with "
-                        f"{repr(synonym)}. "
-                        f"Check your training data and remove "
-                        f"conflicting synonym definitions to "
-                        f"prevent this from happening.",
-                        docs=DOCS_URL_TRAINING_DATA + "#synonyms",
-                    )
+                rasa.shared.utils.io.raise_warning(
+                    f"Found conflicting synonym definitions for {repr(entity_lowercase)}. Overwriting target {repr(self.synonyms[entity_lowercase])} with {repr(synonym)}. Check your training data and remove conflicting synonym definitions to prevent this from happening.",
+                    docs=f"{DOCS_URL_TRAINING_DATA}#synonyms",
+                )
 
-                self.synonyms[entity_lowercase] = synonym
+            self.synonyms[entity_lowercase] = synonym
 
-            # add a self-reference to handle entities extracted in alternate cases
-            # i.e. for a synonym Austria,
-            # entities extracted as AUSTRIA, austria, ausTRIA, etc
-            # should also have the value of `Austria`
-            synonym_lowercase = synonym.lower()
-            if synonym_lowercase not in self.synonyms:
-                self.synonyms[synonym_lowercase] = synonym
+        # add a self-reference to handle entities extracted in alternate cases
+        # i.e. for a synonym Austria,
+        # entities extracted as AUSTRIA, austria, ausTRIA, etc
+        # should also have the value of `Austria`
+        synonym_lowercase = synonym.lower()
+        if synonym_lowercase not in self.synonyms:
+            self.synonyms[synonym_lowercase] = synonym

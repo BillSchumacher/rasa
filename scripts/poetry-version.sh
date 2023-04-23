@@ -2,6 +2,7 @@
 
 """Extract the poetry version from .github/poetry_version.txt. Used in e.g. github workflows."""
 
+
 import pathlib
 import sys
 import re
@@ -13,10 +14,8 @@ if __name__ == "__main__":
     version_regex = r'poetry-version=(.*)'
     with poetry_version_txt.open() as f:
         for line in f:
-            m = re.search(version_regex, line)
-            if m:
-                print(m.group(1))
+            if m := re.search(version_regex, line):
+                print(m[1])
                 sys.exit(0)
-        else:
-            print("Failed to find poetry version.")
-            sys.exit(1)
+        print("Failed to find poetry version.")
+        sys.exit(1)

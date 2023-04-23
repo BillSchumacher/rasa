@@ -43,8 +43,7 @@ class Recipe(abc.ABC):
             GraphV1Recipe.name: GraphV1Recipe,
         }
 
-        recipe_constructor = recipes.get(name)
-        if recipe_constructor:
+        if recipe_constructor := recipes.get(name):
             return recipe_constructor()
 
         raise InvalidRecipeException(

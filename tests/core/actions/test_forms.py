@@ -1921,7 +1921,7 @@ async def test_form_validation_happens_once(caplog: LogCaptureFixture):
             "value": 5,
         }
     ]
-    with aioresponses() as mocked, caplog.at_level(logging.DEBUG):
+    with (aioresponses() as mocked, caplog.at_level(logging.DEBUG)):
         mocked.post(
             ACTION_SERVER_URL,
             payload={"events": form_validation_events},
@@ -1934,12 +1934,9 @@ async def test_form_validation_happens_once(caplog: LogCaptureFixture):
         )
         assert (
             sum(
-                [
-                    1
-                    for message in caplog.messages
-                    if f"Calling action endpoint to run action 'validate_{form_name}'."
-                    in message
-                ]
+                f"Calling action endpoint to run action 'validate_{form_name}'."
+                in message
+                for message in caplog.messages
             )
             == 1
         )

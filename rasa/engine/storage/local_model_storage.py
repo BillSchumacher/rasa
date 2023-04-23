@@ -52,8 +52,7 @@ def windows_safe_temporary_directory(
             shutil.rmtree(f"\\\\?\\{directory}")
     else:
         with tempfile.TemporaryDirectory() as temporary_directory:
-            temporary_directory = rasa.utils.common.decode_bytes(temporary_directory)
-            yield temporary_directory
+            yield rasa.utils.common.decode_bytes(temporary_directory)
 
 
 class LocalModelStorage(ModelStorage):
@@ -107,9 +106,7 @@ class LocalModelStorage(ModelStorage):
             cls._extract_archive_to_directory(
                 model_archive_path, temporary_directory_path
             )
-            metadata = cls._load_metadata(temporary_directory_path)
-
-            return metadata
+            return cls._load_metadata(temporary_directory_path)
 
     @staticmethod
     def _extract_archive_to_directory(

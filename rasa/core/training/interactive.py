@@ -237,7 +237,6 @@ async def send_action(
                     f"when you exit and save this session. "
                     f"You do not need to do anything further."
                 )
-                await _ask_questions(warning_questions, conversation_id, endpoint)
             else:
                 warning_questions = questionary.confirm(
                     f"WARNING: You have created a new action: '{action_name}', "
@@ -248,8 +247,7 @@ async def send_action(
                     f"you are recommended to implement this action "
                     f"in your action server and try again."
                 )
-                await _ask_questions(warning_questions, conversation_id, endpoint)
-
+            await _ask_questions(warning_questions, conversation_id, endpoint)
             payload = ActionExecuted(action_name).as_dict()
             return await send_event(endpoint, conversation_id, payload)
         else:
@@ -308,10 +306,14 @@ def format_bot_output(message: BotUttered) -> Text:
 
 def latest_user_message(events: List[Dict[Text, Any]]) -> Optional[Dict[Text, Any]]:
     """Return most recent user message."""
-    for i, e in enumerate(reversed(events)):
-        if e.get("event") == UserUttered.type_name:
-            return e
-    return None
+    return next(
+        (
+            e
+            for e in reversed(events)
+            if e.get("event") == UserUttered.type_name
+        ),
+        None,
+    )
 
 
 async def _ask_questions(
@@ -413,19 +415,16 @@ async def _request_fork_from_user(
         endpoint, conversation_id, EventVerbosity.AFTER_RESTART
     )
 
-    choices = []
-    for i, e in enumerate(tracker.get("events", [])):
-        if e.get("event") == UserUttered.type_name:
-            choices.append({"name": e.get("text"), "value": i})
-
+    choices = [
+        {"name": e.get("text"), "value": i}
+        for i, e in enumerate(tracker.get("events", []))
+        if e.get("event") == UserUttered.type_name
+    ]
     fork_idx = await _request_fork_point_from_list(
         list(reversed(choices)), conversation_id, endpoint
     )
 
-    if fork_idx is not None:
-        return tracker.get("events", [])[: int(fork_idx)]
-    else:
-        return None
+    return None if fork_idx is None else tracker.get("events", [])[: int(fork_idx)]
 
 
 async def _request_intent_from_user(
@@ -455,17 +454,15 @@ async def _request_intent_from_user(
         choices, conversation_id, endpoint
     )
 
-    if intent_name == OTHER_INTENT:
-        intent_name = await _request_free_text_intent(conversation_id, endpoint)
-        selected_intent = {INTENT_NAME_KEY: intent_name, "confidence": 1.0}
-    else:
+    if intent_name != OTHER_INTENT:
         # returns the selected intent with the original probability value
-        selected_intent = next(
+        return next(
             (x for x in predictions if x[INTENT_NAME_KEY] == intent_name),
             {INTENT_NAME_KEY: None},
         )
 
-    return selected_intent
+    intent_name = await _request_free_text_intent(conversation_id, endpoint)
+    return {INTENT_NAME_KEY: intent_name, "confidence": 1.0}
 
 
 async def _print_history(conversation_id: Text, endpoint: EndpointConfig) -> None:
@@ -851,11 +848,11 @@ def _write_stories_to_file(
 def _filter_messages(msgs: List[Message]) -> List[Message]:
     """Filter messages removing those that start with INTENT_MESSAGE_PREFIX"""
 
-    filtered_messages = []
-    for msg in msgs:
-        if not msg.get(TEXT).startswith(INTENT_MESSAGE_PREFIX):
-            filtered_messages.append(msg)
-    return filtered_messages
+    return [
+        msg
+        for msg in msgs
+        if not msg.get(TEXT).startswith(INTENT_MESSAGE_PREFIX)
+    ]
 
 
 def _write_nlu_to_file(export_nlu_path: Text, events: List[Dict[Text, Any]]) -> None:
@@ -908,10 +905,7 @@ def _entities_from_messages(messages: List[Message]) -> List[Text]:
 def _intents_from_messages(messages: List[Message]) -> Set[Text]:
     """Return all intents that occur in at least one of the messages."""
 
-    # set of distinct intents
-    distinct_intents = {m.data["intent"] for m in messages if "intent" in m.data}
-
-    return distinct_intents
+    return {m.data["intent"] for m in messages if "intent" in m.data}
 
 
 def _write_domain_to_file(
@@ -1212,10 +1206,7 @@ def _validate_user_regex(latest_message: Dict[Text, Any], intents: List[Text]) -
     parse_data = latest_message.get("parse_data", {})
     intent = parse_data.get("intent", {}).get(INTENT_NAME_KEY)
 
-    if intent in intents:
-        return True
-    else:
-        return False
+    return intent in intents
 
 
 async def _validate_user_text(
@@ -1228,8 +1219,7 @@ async def _validate_user_text(
     parse_data = latest_message.get("parse_data", {})
     text = _as_md_message(parse_data)
     intent = parse_data.get("intent", {}).get(INTENT_NAME_KEY)
-    entities = parse_data.get("entities", [])
-    if entities:
+    if entities := parse_data.get("entities", []):
         message = (
             f"Is the intent '{intent}' correct for '{text}' and are "
             f"all entities labeled correctly?"
@@ -1305,11 +1295,9 @@ async def _correct_entities(
     annotation = await _ask_questions(question, conversation_id, endpoint)
     parse_annotated = entities_parser.parse_training_example(annotation)
 
-    corrected_entities = _merge_annotated_and_original_entities(
+    return _merge_annotated_and_original_entities(
         parse_annotated, parse_original
     )
-
-    return corrected_entities
 
 
 def _merge_annotated_and_original_entities(
@@ -1354,7 +1342,7 @@ async def is_listening_for_message(
     """Check if the conversation is in need for a user message."""
     tracker = await retrieve_tracker(endpoint, conversation_id, EventVerbosity.APPLIED)
 
-    for i, e in enumerate(reversed(tracker.get("events", []))):
+    for e in reversed(tracker.get("events", [])):
         if e.get("event") == UserUttered.type_name:
             return False
         elif e.get("event") == ActionExecuted.type_name:
@@ -1368,7 +1356,7 @@ async def _undo_latest(conversation_id: Text, endpoint: EndpointConfig) -> None:
 
     # Get latest `UserUtterance` or `ActionExecuted` event.
     last_event_type = None
-    for i, e in enumerate(reversed(tracker.get("events", []))):
+    for e in reversed(tracker.get("events", [])):
         last_event_type = e.get("event")
         if last_event_type in {ActionExecuted.type_name, UserUttered.type_name}:
             break
@@ -1722,11 +1710,9 @@ def calc_true_wrapping_width(text: Text, monospace_wrapping_width: int) -> int:
         lines = textwrap.wrap(text, potential_width)
         # test whether all lines' visible width fits the available width
         if all(
-            [
-                terminaltables.width_and_alignment.visible_width(line)
-                <= monospace_wrapping_width
-                for line in lines
-            ]
+            terminaltables.width_and_alignment.visible_width(line)
+            <= monospace_wrapping_width
+            for line in lines
         ):
             true_wrapping_width = potential_width
             break

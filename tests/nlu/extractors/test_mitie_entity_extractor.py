@@ -99,8 +99,6 @@ def test_train_extract_load(
         message.data[ENTITIES] = entities
         if with_trainable_examples:
             message.data[INTENT] = "must have intent otherwise not an NLU example"
-        else:
-            pass  # not adding an intent is sufficient to make this a "core example"
         messages_with_entities.append(message)
 
     # turn them into training data

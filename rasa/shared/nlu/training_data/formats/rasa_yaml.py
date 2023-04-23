@@ -350,10 +350,11 @@ class RasaYAMLReader(TrainingDataReader):
             YamlException: if the file seems to be a YAML file (extension) but
                 can not be read / parsed.
         """
-        if not rasa.shared.data.is_likely_yaml_file(filename):
-            return False
-
-        return rasa.shared.utils.io.is_key_in_yaml(filename, KEY_NLU, KEY_RESPONSES)
+        return (
+            rasa.shared.utils.io.is_key_in_yaml(filename, KEY_NLU, KEY_RESPONSES)
+            if rasa.shared.data.is_likely_yaml_file(filename)
+            else False
+        )
 
 
 class RasaYAMLWriter(TrainingDataWriter):
@@ -374,9 +375,7 @@ class RasaYAMLWriter(TrainingDataWriter):
             target: Name of the target object to write the YAML to.
             training_data: TrainingData object.
         """
-        result = self.training_data_to_dict(training_data)
-
-        if result:
+        if result := self.training_data_to_dict(training_data):
             rasa.shared.utils.io.write_yaml(result, target, True)
 
     @classmethod

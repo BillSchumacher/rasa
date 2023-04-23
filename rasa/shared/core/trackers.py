@@ -235,10 +235,7 @@ class DialogueStateTracker:
         """Returns the current tracker state as an object."""
         events = self._events_for_verbosity(event_verbosity)
         events_as_dict = [e.as_dict() for e in events] if events is not None else None
-        latest_event_time = None
-        if len(self.events) > 0:
-            latest_event_time = self.events[-1].timestamp
-
+        latest_event_time = self.events[-1].timestamp if len(self.events) > 0 else None
         return {
             "sender_id": self.sender_id,
             "slots": self.current_slot_values(),
@@ -382,9 +379,8 @@ class DialogueStateTracker:
         """Retrieves the value of a slot."""
         if key in self.slots:
             return self.slots[key].value
-        else:
-            logger.info(f"Tried to access non existent slot '{key}'")
-            return None
+        logger.info(f"Tried to access non existent slot '{key}'")
+        return None
 
     def get_latest_entity_values(
         self,
@@ -420,10 +416,14 @@ class DialogueStateTracker:
 
     def get_latest_input_channel(self) -> Optional[Text]:
         """Get the name of the input_channel of the latest UserUttered event."""
-        for e in reversed(self.events):
-            if isinstance(e, UserUttered):
-                return e.input_channel
-        return None
+        return next(
+            (
+                e.input_channel
+                for e in reversed(self.events)
+                if isinstance(e, UserUttered)
+            ),
+            None,
+        )
 
     def is_paused(self) -> bool:
         """State whether the tracker is currently paused."""
@@ -434,11 +434,14 @@ class DialogueStateTracker:
 
         If the conversation has not been restarted, ``0`` is returned.
         """
-        for i, event in enumerate(reversed(self.events)):
-            if isinstance(event, Restarted):
-                return len(self.events) - i
-
-        return 0
+        return next(
+            (
+                len(self.events) - i
+                for i, event in enumerate(reversed(self.events))
+                if isinstance(event, Restarted)
+            ),
+            0,
+        )
 
     def events_after_latest_restart(self) -> List[Event]:
         """Return a list of events after the most recent restart."""
@@ -871,7 +874,7 @@ class DialogueStateTracker:
         data: Dict[Text, Any] = {"sender_id": self.sender_id}
 
         if self.slots:
-            data.update(self.slots)
+            data |= self.slots
 
         if self.events:
             data["events"] = list(self.events)

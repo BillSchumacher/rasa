@@ -328,7 +328,7 @@ def test_read_rules_without_stories(rule_steps_without_stories: List[StoryStep])
     rule_steps = [s for s in rule_steps_without_stories if isinstance(s, RuleStep)]
 
     # this file contains five rules and no ML stories
-    assert len(ml_steps) == 0
+    assert not ml_steps
     assert len(rule_steps) == 8
 
 
@@ -754,7 +754,7 @@ def test_read_story_file_with_cycles(domain: Domain):
 
     assert graph.cyclic_edge_ids != set()
     # sorting removed_edges converting set converting it to list
-    assert graph_without_cycles.cyclic_edge_ids == list()
+    assert graph_without_cycles.cyclic_edge_ids == []
 
     assert len(graph.story_steps) == len(graph_without_cycles.story_steps) == 5
 
@@ -773,7 +773,7 @@ def test_generate_training_data_with_cycles(domain: Domain):
 
     # how many there are depends on the graph which is not created in a
     # deterministic way but should always be 3 or 4
-    assert len(training_trackers) == 3 or len(training_trackers) == 4
+    assert len(training_trackers) in {3, 4}
 
     # if we have 4 trackers, there is going to be one example more for label 10
     num_tens = len(training_trackers) - 1
@@ -827,7 +827,7 @@ def test_visualize_training_data_graph(tmp_path: Path, domain: Domain):
 
     # we can't check the exact topology - but this should be enough to ensure
     # the visualisation created a sane graph
-    assert set(G.nodes()) == set(range(-1, 13)) or set(G.nodes()) == set(range(-1, 14))
+    assert set(G.nodes()) in [set(range(-1, 13)), set(range(-1, 14))]
     if set(G.nodes()) == set(range(-1, 13)):
         assert len(G.edges()) == 14
     elif set(G.nodes()) == set(range(-1, 14)):
@@ -842,9 +842,10 @@ def test_load_multi_file_training_data(domain: Domain):
     trackers = sorted(trackers, key=lambda t: t.sender_id)
 
     (tr_as_sts, tr_as_acts) = featurizer.training_states_and_labels(trackers, domain)
-    hashed = []
-    for sts, acts in zip(tr_as_sts, tr_as_acts):
-        hashed.append(json.dumps(sts + acts, sort_keys=True))
+    hashed = [
+        json.dumps(sts + acts, sort_keys=True)
+        for sts, acts in zip(tr_as_sts, tr_as_acts)
+    ]
     hashed = sorted(hashed, reverse=True)
 
     data, label_ids, _ = featurizer.featurize_trackers(
@@ -860,9 +861,10 @@ def test_load_multi_file_training_data(domain: Domain):
     (tr_as_sts_mul, tr_as_acts_mul) = featurizer.training_states_and_labels(
         trackers_mul, domain
     )
-    hashed_mul = []
-    for sts_mul, acts_mul in zip(tr_as_sts_mul, tr_as_acts_mul):
-        hashed_mul.append(json.dumps(sts_mul + acts_mul, sort_keys=True))
+    hashed_mul = [
+        json.dumps(sts_mul + acts_mul, sort_keys=True)
+        for sts_mul, acts_mul in zip(tr_as_sts_mul, tr_as_acts_mul)
+    ]
     hashed_mul = sorted(hashed_mul, reverse=True)
 
     data_mul, label_ids_mul, _ = featurizer_mul.featurize_trackers(
@@ -1045,13 +1047,13 @@ def test_process_unpacks_attributes_from_single_message_and_fallsback_if_needed(
             }
             for item in entity_data
         )
-        assert set(
+        assert {
             (item[ENTITY_ATTRIBUTE_TYPE], item[ENTITY_ATTRIBUTE_VALUE])
             for item in expected_entities
-        ) == set(
+        } == {
             (item[ENTITY_ATTRIBUTE_TYPE], item[ENTITY_ATTRIBUTE_VALUE])
             for item in entity_data
-        )
+        }
     else:
         assert unpacked_message.data[ENTITIES] is not None
         assert len(unpacked_message.data[ENTITIES]) == 0

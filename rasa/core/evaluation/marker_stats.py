@@ -19,8 +19,8 @@ def compute_statistics(
         "count": len(values) if values else 0,
         "mean": np.mean(values) if values else np.nan,
         "median": np.median(values) if values else np.nan,
-        "min": min(values) if values else np.nan,
-        "max": max(values) if values else np.nan,
+        "min": min(values, default=np.nan),
+        "max": max(values, default=np.nan),
     }
 
 

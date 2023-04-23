@@ -100,17 +100,13 @@ class LogisticRegressionClassifier(IntentClassifier, GraphComponent):
         self, training_data: TrainingData
     ) -> Tuple[csr_matrix, List[str]]:
         """This method creates a scikit-learn compatible (X, y) training pairs."""
-        y = []
-
         examples = [
             e
             for e in training_data.intent_examples
             if (e.get("intent") and e.get("text"))
         ]
 
-        for e in examples:
-            y.append(e.get(INTENT))
-
+        y = [e.get(INTENT) for e in examples]
         return self._create_X(examples), y
 
     def train(self, training_data: TrainingData) -> Resource:

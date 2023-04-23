@@ -169,13 +169,11 @@ class TrackerStore:
                 event_broker=event_broker,
             )
 
-            tracker_store = (
+            return (
                 _tracker_store
                 if _tracker_store
                 else create_tracker_store(obj, domain, event_broker)
             )
-
-            return tracker_store
         except (
             BotoCoreError,
             pymongo.errors.ConnectionFailure,
@@ -184,7 +182,7 @@ class TrackerStore:
             pymongo.errors.OperationFailure,
         ) as error:
             raise ConnectionException(
-                "Cannot connect to tracker store." + str(error)
+                f"Cannot connect to tracker store.{str(error)}"
             ) from error
 
     async def get_or_create_tracker(
@@ -333,7 +331,7 @@ class TrackerStore:
         """Publishes new tracker events to a message broker."""
         for event in new_events:
             body = {"sender_id": sender_id}
-            body.update(event.as_dict())
+            body |= event.as_dict()
             event_broker.publish(body)
 
     async def number_of_existing_events(self, sender_id: Text) -> int:
@@ -491,7 +489,7 @@ class RedisTrackerStore(TrackerStore, SerializedTrackerAsText):
 
     def _set_key_prefix(self, key_prefix: Text) -> None:
         if isinstance(key_prefix, str) and key_prefix.isalnum():
-            self.key_prefix = key_prefix + ":" + DEFAULT_REDIS_TRACKER_STORE_KEY_PREFIX
+            self.key_prefix = f"{key_prefix}:{DEFAULT_REDIS_TRACKER_STORE_KEY_PREFIX}"
         else:
             logger.warning(
                 f"Omitting provided non-alphanumeric redis key prefix: '{key_prefix}'. "
@@ -580,7 +578,7 @@ class RedisTrackerStore(TrackerStore, SerializedTrackerAsText):
 
     async def keys(self) -> Iterable[Text]:
         """Returns keys of the Redis Tracker Store."""
-        return self.red.keys(self.key_prefix + "*")
+        return self.red.keys(f"{self.key_prefix}*")
 
     @staticmethod
     def _merge_trackers(
@@ -611,10 +609,8 @@ class RedisTrackerStore(TrackerStore, SerializedTrackerAsText):
             # Event subclasses implement `__eq__` method that make it difficult
             # to compare events. We use `as_dict` to compare events.
             if all(
-                [
-                    new_event.as_dict() != existing_event.as_dict()
-                    for existing_event in merged.events
-                ]
+                new_event.as_dict() != existing_event.as_dict()
+                for existing_event in merged.events
             ):
                 merged.update(new_event)
 
@@ -741,11 +737,7 @@ class DynamoTrackerStore(TrackerStore, SerializedTrackerAsDict):
             # `float`s are stored as `Decimal` objects - we need to convert them back
             events_with_floats = core_utils.replace_decimals_with_floats(events)
 
-        if self.domain is None:
-            slots = []
-        else:
-            slots = self.domain.slots
-
+        slots = [] if self.domain is None else self.domain.slots
         return DialogueStateTracker.from_dict(sender_id, events_with_floats, slots)
 
     async def keys(self) -> Iterable[Text]:
@@ -910,10 +902,11 @@ class MongoTrackerStore(TrackerStore, SerializedTrackerAsText):
         """Retrieves tracker for the latest conversation session."""
         events = await self._retrieve(sender_id, fetch_events_from_all_sessions=False)
 
-        if not events:
-            return None
-
-        return DialogueStateTracker.from_dict(sender_id, events, self.domain.slots)
+        return (
+            DialogueStateTracker.from_dict(sender_id, events, self.domain.slots)
+            if events
+            else None
+        )
 
     async def retrieve_full_tracker(
         self, conversation_id: Text
@@ -923,11 +916,12 @@ class MongoTrackerStore(TrackerStore, SerializedTrackerAsText):
             conversation_id, fetch_events_from_all_sessions=True
         )
 
-        if not events:
-            return None
-
-        return DialogueStateTracker.from_dict(
-            conversation_id, events, self.domain.slots
+        return (
+            DialogueStateTracker.from_dict(
+                conversation_id, events, self.domain.slots
+            )
+            if events
+            else None
         )
 
     async def keys(self) -> Iterable[Text]:
@@ -981,9 +975,7 @@ def create_engine_kwargs(url: Union[Text, "URL"]) -> Dict[Text, Any]:
 
     kwargs: Dict[Text, Any] = {}
 
-    schema_name = os.environ.get(POSTGRESQL_SCHEMA)
-
-    if schema_name:
+    if schema_name := os.environ.get(POSTGRESQL_SCHEMA):
         logger.debug(f"Using PostgreSQL schema '{schema_name}'.")
         kwargs["connect_args"] = {"options": f"-csearch_path={schema_name}"}
 
@@ -1181,7 +1173,7 @@ class SQLTrackerStore(TrackerStore, SerializedTrackerAsText):
         """Creates database `db` and updates engine accordingly."""
         from sqlalchemy import create_engine
 
-        if not self.engine.dialect.name == "postgresql":
+        if self.engine.dialect.name != "postgresql":
             rasa.shared.utils.io.raise_warning(
                 "The parameter 'login_db' can only be used with a postgres database."
             )
@@ -1278,7 +1270,7 @@ class SQLTrackerStore(TrackerStore, SerializedTrackerAsText):
 
             events = [json.loads(event.data) for event in serialised_events]
 
-            if self.domain and len(events) > 0:
+            if self.domain and events:
                 logger.debug(f"Recreating tracker from sender id '{sender_id}'")
                 return DialogueStateTracker.from_dict(
                     sender_id, events, self.domain.slots

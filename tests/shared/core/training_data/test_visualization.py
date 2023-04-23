@@ -105,7 +105,7 @@ def test_graph_persistence(domain: Domain, tmp_path: Path):
     content = rasa.shared.utils.io.read_file(out_file)
 
     assert "isClient = true" in content
-    assert "graph = `{}`".format(generated_graph.to_string()) in content
+    assert f"graph = `{generated_graph.to_string()}`" in content
 
 
 def test_merge_nodes(domain: Domain, tmp_path: Path):

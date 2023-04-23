@@ -66,10 +66,7 @@ class WhitespaceTokenizer(Tokenizer):
         """Remove emoji if the full text, aka token, matches the emoji regex."""
         match = self.emoji_pattern.fullmatch(text)
 
-        if match is not None:
-            return ""
-
-        return text
+        return "" if match is not None else text
 
     def tokenize(self, message: Message, attribute: Text) -> List[Token]:
         text = message.get(attribute)

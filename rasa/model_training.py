@@ -87,13 +87,15 @@ def get_unresolved_slots(domain: Domain, stories: StoryGraph) -> List[Text]:
         A list of unresolved slots.
     """
     return list(
-        set(
-            evnt.key
-            for step in stories.story_steps
-            for evnt in step.events
-            if isinstance(evnt, SlotSet)
+        (
+            {
+                evnt.key
+                for step in stories.story_steps
+                for evnt in step.events
+                if isinstance(evnt, SlotSet)
+            }
+            - {slot.name for slot in domain.slots}
         )
-        - set(slot.name for slot in domain.slots)
     )
 
 
@@ -110,8 +112,7 @@ def _check_unresolved_slots(domain: Domain, stories: StoryGraph) -> None:
     Returns:
         `None` if there are no unresolved slots.
     """
-    unresolved_slots = get_unresolved_slots(domain, stories)
-    if unresolved_slots:
+    if unresolved_slots := get_unresolved_slots(domain, stories):
         rasa.shared.utils.cli.print_error_and_exit(
             f"Unresolved slots found in stories/rules🚨 \n"
             f'Tried to set slots "{unresolved_slots}" that are not present in'
@@ -315,11 +316,11 @@ def _determine_model_name(
 ) -> Text:
     if fixed_model_name:
         model_file = Path(fixed_model_name)
-        if not model_file.name.endswith(".tar.gz"):
-            return model_file.with_suffix(".tar.gz").name
-
-        return fixed_model_name
-
+        return (
+            fixed_model_name
+            if model_file.name.endswith(".tar.gz")
+            else model_file.with_suffix(".tar.gz").name
+        )
     prefix = ""
     if training_type in [TrainingType.CORE, TrainingType.NLU]:
         prefix = f"{training_type.model_type}-"

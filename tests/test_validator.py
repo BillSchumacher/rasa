@@ -21,8 +21,7 @@ def validator_under_test() -> Validator:
             "data/test_validation/data/stories.yml",
         ],
     )
-    validator = Validator.from_importer(importer)
-    return validator
+    return Validator.from_importer(importer)
 
 
 def test_verify_nlu_with_e2e_story(tmp_path: Path, nlu_data_path: Path):

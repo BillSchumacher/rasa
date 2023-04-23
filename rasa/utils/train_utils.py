@@ -508,16 +508,14 @@ def _check_confidence_setting(component_config: Dict[Text, Any]) -> None:
                 f"combination. You can use {MODEL_CONFIDENCE}={SOFTMAX} "
                 f"only with {SIMILARITY_TYPE}={INNER}."
             )
-    if component_config.get(RENORMALIZE_CONFIDENCES) and component_config.get(
-        RANKING_LENGTH
+    if (
+        component_config.get(RENORMALIZE_CONFIDENCES)
+        and component_config.get(RANKING_LENGTH)
+        and component_config[MODEL_CONFIDENCE] != SOFTMAX
     ):
-        if component_config[MODEL_CONFIDENCE] != SOFTMAX:
-            raise InvalidConfigException(
-                f"Renormalizing the {component_config[RANKING_LENGTH]} top "
-                f"predictions should only be done if {MODEL_CONFIDENCE}={SOFTMAX} "
-                f"Please use {RENORMALIZE_CONFIDENCES}={True} "
-                f"only with {MODEL_CONFIDENCE}={SOFTMAX}."
-            )
+        raise InvalidConfigException(
+            f"Renormalizing the {component_config[RANKING_LENGTH]} top predictions should only be done if {MODEL_CONFIDENCE}={SOFTMAX} Please use {RENORMALIZE_CONFIDENCES}=True only with {MODEL_CONFIDENCE}={SOFTMAX}."
+        )
 
 
 def _check_loss_setting(component_config: Dict[Text, Any]) -> None:

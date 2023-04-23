@@ -175,10 +175,7 @@ class SpacyNLP(GraphComponent):
             # this example, but since we are processing in batch mode, it would
             # get complex to collect all processed and neglected examples.
             text = ""
-        if self._config.get("case_sensitive"):
-            return text
-        else:
-            return text.lower()
+        return text if self._config.get("case_sensitive") else text.lower()
 
     def _get_text(self, example: Dict[Text, Any], attribute: Text) -> Text:
         return self._preprocess_text(example.get(attribute))
@@ -190,7 +187,7 @@ class SpacyNLP(GraphComponent):
     ) -> List[Tuple[int, Doc]]:
         """Merge lists with processed Docs back into their original order."""
         dct = dict(indexed_training_samples)
-        dct.update(doc_lists)
+        dct |= doc_lists
         return sorted(dct.items())
 
     @staticmethod
@@ -217,19 +214,15 @@ class SpacyNLP(GraphComponent):
         model: Language, samples_to_pipe: List[Tuple[int, Text]]
     ) -> List[Tuple[int, Doc]]:
         """Sends content bearing training samples to SpaCy's pipe."""
-        docs = [
+        return [
             (to_pipe_sample[0], doc)
             for to_pipe_sample, doc in zip(
                 samples_to_pipe,
-                [
-                    doc
-                    for doc in model.pipe(
-                        [txt for _, txt in samples_to_pipe], batch_size=50
-                    )
-                ],
+                list(
+                    model.pipe([txt for _, txt in samples_to_pipe], batch_size=50)
+                ),
             )
         ]
-        return docs
 
     @staticmethod
     def _process_non_content_bearing_samples(
@@ -238,13 +231,12 @@ class SpacyNLP(GraphComponent):
         """Creates empty Doc-objects from zero-lengthed training samples strings."""
         from spacy.tokens import Doc
 
-        n_docs = [
+        return [
             (empty_sample[0], doc)
             for empty_sample, doc in zip(
-                empty_samples, [Doc(model.vocab) for doc in empty_samples]
+                empty_samples, [Doc(model.vocab) for _ in empty_samples]
             )
         ]
-        return n_docs
 
     def _docs_for_training_data(
         self, model: Language, training_data: TrainingData
@@ -257,7 +249,7 @@ class SpacyNLP(GraphComponent):
             ]
             # Index and freeze indices of the training samples for preserving the order
             # after processing the data.
-            indexed_training_samples = [(idx, text) for idx, text in enumerate(texts)]
+            indexed_training_samples = list(enumerate(texts))
 
             samples_to_pipe, empty_samples = self._filter_training_samples_by_content(
                 indexed_training_samples

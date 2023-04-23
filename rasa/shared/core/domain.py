@@ -197,8 +197,7 @@ class Domain:
             domain = cls.from_directory(path)
         else:
             raise InvalidDomain(
-                "Failed to load domain specification from '{}'. "
-                "File not found!".format(os.path.abspath(path))
+                f"Failed to load domain specification from '{os.path.abspath(path)}'. File not found!"
             )
 
         return domain
@@ -215,11 +214,13 @@ class Domain:
             rasa.shared.utils.validation.validate_yaml_schema(yaml, DOMAIN_SCHEMA_FILE)
 
             data = rasa.shared.utils.io.read_yaml(yaml)
-            if not rasa.shared.utils.validation.validate_training_data_format_version(
-                data, original_filename
-            ):
-                return Domain.empty()
-            return cls.from_dict(data)
+            return (
+                cls.from_dict(data)
+                if rasa.shared.utils.validation.validate_training_data_format_version(
+                    data, original_filename
+                )
+                else Domain.empty()
+            )
         except YamlException as e:
             e.filename = original_filename
             raise e
@@ -234,8 +235,7 @@ class Domain:
         Returns:
             The instantiated `Domain` object.
         """
-        duplicates = data.pop("duplicates", None)
-        if duplicates:
+        if duplicates := data.pop("duplicates", None):
             warn_about_duplicates_found_during_domain_merging(duplicates)
 
         responses = data.get(KEY_RESPONSES, {})
@@ -299,8 +299,7 @@ class Domain:
                     )
                     combined = Domain.merge_domain_dicts(other_dict, combined)
 
-        domain = Domain.from_dict(combined)
-        return domain
+        return Domain.from_dict(combined)
 
     def merge(
         self,
@@ -566,9 +565,7 @@ class Domain:
             excluded_entities.update(
                 Domain.concatenate_entity_labels(entity_properties.groups, entity)
             )
-        used_entities = list(included_entities - excluded_entities)
-        used_entities.sort()
-
+        used_entities = sorted(included_entities - excluded_entities)
         # Only print warning for ambiguous configurations if entities were included
         # explicitly.
         explicitly_included = isinstance(properties[USE_ENTITIES_KEY], list)
@@ -616,21 +613,7 @@ class Domain:
             elif isinstance(entity, dict):
                 for _entity, sub_labels in entity.items():
                     entity_properties.entities.append(_entity)
-                    if sub_labels:
-                        if ENTITY_ROLES_KEY in sub_labels:
-                            entity_properties.roles[_entity] = sub_labels[
-                                ENTITY_ROLES_KEY
-                            ]
-                        if ENTITY_GROUPS_KEY in sub_labels:
-                            entity_properties.groups[_entity] = sub_labels[
-                                ENTITY_GROUPS_KEY
-                            ]
-                        if (
-                            ENTITY_FEATURIZATION_KEY in sub_labels
-                            and sub_labels[ENTITY_FEATURIZATION_KEY] is False
-                        ):
-                            entity_properties.default_ignored_entities.append(_entity)
-                    else:
+                    if not sub_labels:
                         raise InvalidDomain(
                             f"In the `domain.yml` file, the entity '{_entity}' cannot"
                             f" have value of `{type(sub_labels)}`. If you have placed a"
@@ -643,6 +626,19 @@ class Domain:
                             f" for examples on when to use the ':' character after an"
                             f" entity's name."
                         )
+                    if ENTITY_ROLES_KEY in sub_labels:
+                        entity_properties.roles[_entity] = sub_labels[
+                            ENTITY_ROLES_KEY
+                        ]
+                    if ENTITY_GROUPS_KEY in sub_labels:
+                        entity_properties.groups[_entity] = sub_labels[
+                            ENTITY_GROUPS_KEY
+                        ]
+                    if (
+                        ENTITY_FEATURIZATION_KEY in sub_labels
+                        and sub_labels[ENTITY_FEATURIZATION_KEY] is False
+                    ):
+                        entity_properties.default_ignored_entities.append(_entity)
             else:
                 raise InvalidDomain(
                     f"Invalid domain. Entity is invalid, type of entity '{entity}' "
@@ -674,10 +670,10 @@ class Domain:
         for intent in intents:
             intent_name, properties = cls._intent_properties(intent, entity_properties)
 
-            if intent_name in intent_properties.keys():
+            if intent_name in intent_properties:
                 duplicates.add(intent_name)
 
-            intent_properties.update(properties)
+            intent_properties |= properties
 
         if duplicates:
             raise InvalidDomain(
@@ -721,7 +717,7 @@ class Domain:
         for intent_name in rasa.shared.core.constants.DEFAULT_INTENTS:
             if intent_name not in intent_properties:
                 _, properties = cls._intent_properties(intent_name, entity_properties)
-                intent_properties.update(properties)
+                intent_properties |= properties
 
     def __init__(
         self,
@@ -995,9 +991,7 @@ class Domain:
             in self.action_names_or_texts
         ):
             logger.warning(
-                "You are using an experimental feature: Action '{}'!".format(
-                    rasa.shared.core.constants.DEFAULT_KNOWLEDGE_BASE_ACTION
-                )
+                f"You are using an experimental feature: Action '{rasa.shared.core.constants.DEFAULT_KNOWLEDGE_BASE_ACTION}'!"
             )
             slot_names = [slot.name for slot in self.slots]
             knowledge_base_slots = [
@@ -1049,7 +1043,7 @@ class Domain:
         return [
             f"{slot.name}_{feature_index}"
             for slot in self.slots
-            for feature_index in range(0, slot.feature_dimensionality())
+            for feature_index in range(slot.feature_dimensionality())
         ]
 
     # noinspection PyTypeChecker
@@ -1131,21 +1125,19 @@ class Domain:
         # groups get featurized. We concatenate the entity label with the role/group
         # label using a special separator to make sure that the resulting label is
         # unique (as you can have the same role/group label for different entities).
-        entity_names_basic = set(
+        entity_names_basic = {
             entity["entity"] for entity in entities if "entity" in entity.keys()
-        )
-        entity_names_roles = set(
-            f"{entity['entity']}"
-            f"{rasa.shared.core.constants.ENTITY_LABEL_SEPARATOR}{entity['role']}"
+        }
+        entity_names_roles = {
+            f"{entity['entity']}{rasa.shared.core.constants.ENTITY_LABEL_SEPARATOR}{entity['role']}"
             for entity in entities
             if "entity" in entity.keys() and "role" in entity.keys()
-        )
-        entity_names_groups = set(
-            f"{entity['entity']}"
-            f"{rasa.shared.core.constants.ENTITY_LABEL_SEPARATOR}{entity['group']}"
+        }
+        entity_names_groups = {
+            f"{entity['entity']}{rasa.shared.core.constants.ENTITY_LABEL_SEPARATOR}{entity['group']}"
             for entity in entities
             if "entity" in entity.keys() and "group" in entity.keys()
-        )
+        }
         entity_names = entity_names_basic.union(entity_names_roles, entity_names_groups)
 
         # the USED_ENTITIES_KEY of an intent also contains the entity labels and the
@@ -1180,12 +1172,7 @@ class Domain:
                 set(sub_state.get(ENTITIES, ()))
             )
         )
-        # Sort entities so that any derived state representation is consistent across
-        # runs and invariant to the order in which the entities for an utterance are
-        # listed in data files.
-        entities = tuple(sorted(entities))
-
-        if entities:
+        if entities := tuple(sorted(entities)):
             sub_state[ENTITIES] = entities
         else:
             sub_state.pop(ENTITIES, None)
@@ -1363,7 +1350,7 @@ class Domain:
                 # don't change the fact whether dialogue turn should be hidden
                 if (
                     not tr.followup_action
-                    and not tr.latest_action_name == tr.active_loop_name
+                    and tr.latest_action_name != tr.active_loop_name
                 ):
                     turn_was_hidden = hide_rule_turn
 
@@ -1401,38 +1388,38 @@ class Domain:
         Returns:
             A list of `SlotSet` events.
         """
-        if self.store_entities_as_slots:
-            slot_events = []
-
-            for slot in self.slots:
-                matching_entities = []
-
-                for mapping in slot.mappings:
-                    if mapping[MAPPING_TYPE] != str(
-                        SlotMappingType.FROM_ENTITY
-                    ) or mapping.get(MAPPING_CONDITIONS):
-                        continue
-
-                    for entity in entities:
-                        if (
-                            entity.get(ENTITY_ATTRIBUTE_TYPE)
-                            == mapping.get(ENTITY_ATTRIBUTE_TYPE)
-                            and entity.get(ENTITY_ATTRIBUTE_ROLE)
-                            == mapping.get(ENTITY_ATTRIBUTE_ROLE)
-                            and entity.get(ENTITY_ATTRIBUTE_GROUP)
-                            == mapping.get(ENTITY_ATTRIBUTE_GROUP)
-                        ):
-                            matching_entities.append(entity.get("value"))
-
-                if matching_entities:
-                    if isinstance(slot, ListSlot):
-                        slot_events.append(SlotSet(slot.name, matching_entities))
-                    else:
-                        slot_events.append(SlotSet(slot.name, matching_entities[-1]))
-
-            return slot_events
-        else:
+        if not self.store_entities_as_slots:
             return []
+        slot_events = []
+
+        for slot in self.slots:
+            matching_entities = []
+
+            for mapping in slot.mappings:
+                if mapping[MAPPING_TYPE] != str(
+                    SlotMappingType.FROM_ENTITY
+                ) or mapping.get(MAPPING_CONDITIONS):
+                    continue
+
+                matching_entities.extend(
+                    entity.get("value")
+                    for entity in entities
+                    if (
+                        entity.get(ENTITY_ATTRIBUTE_TYPE)
+                        == mapping.get(ENTITY_ATTRIBUTE_TYPE)
+                        and entity.get(ENTITY_ATTRIBUTE_ROLE)
+                        == mapping.get(ENTITY_ATTRIBUTE_ROLE)
+                        and entity.get(ENTITY_ATTRIBUTE_GROUP)
+                        == mapping.get(ENTITY_ATTRIBUTE_GROUP)
+                    )
+                )
+            if matching_entities:
+                if isinstance(slot, ListSlot):
+                    slot_events.append(SlotSet(slot.name, matching_entities))
+                else:
+                    slot_events.append(SlotSet(slot.name, matching_entities[-1]))
+
+        return slot_events
 
     def persist_specification(self, model_path: Text) -> None:
         """Persist the domain specification to storage."""
@@ -1538,7 +1525,7 @@ class Domain:
             )
         }
 
-        domain_data.update(self.as_dict())
+        domain_data |= self.as_dict()
 
         if domain_data.get(KEY_RESPONSES, {}):
             domain_data[KEY_RESPONSES] = self.get_responses_with_multilines(
@@ -1832,11 +1819,7 @@ class Domain:
         Returns:
             The list of slot names or an empty list if no form was found.
         """
-        form = self.forms.get(form_name)
-        if form:
-            return form[REQUIRED_SLOTS_KEY]
-
-        return []
+        return form[REQUIRED_SLOTS_KEY] if (form := self.forms.get(form_name)) else []
 
     def count_slot_mapping_statistics(self) -> Tuple[int, int, int]:
         """Counts the total number of slot mappings and custom slot mappings.
@@ -1931,8 +1914,7 @@ def warn_about_duplicates_found_during_domain_merging(
         KEY_SLOTS,
         KEY_ENTITIES,
     ]:
-        duplicates_per_key = duplicates.get(key)
-        if duplicates_per_key:
+        if duplicates_per_key := duplicates.get(key):
             if message:
                 message += " \n"
 

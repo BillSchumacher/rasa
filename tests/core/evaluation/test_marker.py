@@ -82,14 +82,14 @@ def test_condition(condition_marker_type: Type[ConditionMarker], negated: bool):
         ActionExecuted(action_name="same-text"),
     ]
     num_non_negated_condition_applies = 3
-    events = events * num_non_negated_condition_applies
+    events *= num_non_negated_condition_applies
     for event in events:
         marker.track(event)
     assert len(marker.history) == len(events)
     expected = (
-        num_non_negated_condition_applies
-        if not negated
-        else (len(events) - num_non_negated_condition_applies)
+        len(events) - num_non_negated_condition_applies
+        if negated
+        else num_non_negated_condition_applies
     )
     assert sum(marker.history) == expected
 
@@ -105,7 +105,7 @@ def test_condition_evaluate_events(condition_marker_type: Type[ConditionMarker])
         ActionExecuted(action_name="same-text"),
     ]
     num_applies = 3
-    events = events * num_applies
+    events *= num_applies
     marker = condition_marker_type(text="same-text", name="marker_name")
     evaluation = marker.evaluate_events(events)
     assert len(evaluation) == 1
@@ -405,7 +405,7 @@ def test_operator_nested_randomly_all_sub_markers_track_events(
     ]
     for event in events:
         marker.track(event)
-    assert len([sub_marker for sub_marker in marker.flatten()]) == expected_size
+    assert len(list(marker.flatten())) == expected_size
     for sub_marker in marker.flatten():
         assert len(sub_marker.history) == len(events)
 
@@ -445,9 +445,9 @@ def test_operator_nested_randomly_all_sub_markers_track_events_and_apply_at_some
 
     # by design, every marker applies at some point / never
     if applies_at_some_point:
-        assert all([any(sub_marker.history) for sub_marker in marker.flatten()])
+        assert all(any(sub_marker.history) for sub_marker in marker.flatten())
     else:
-        assert all([not any(sub_marker.history) for sub_marker in marker.flatten()])
+        assert all(not any(sub_marker.history) for sub_marker in marker.flatten())
 
 
 def test_sessions_evaluated_separately():
@@ -541,11 +541,11 @@ async def test_markers_cli_results_save_correctly(tmp_path: Path):
 def _collect_parameters(
     marker: Marker, condition_type: Type[ConditionMarker]
 ) -> Set[Text]:
-    return set(
+    return {
         sub_marker.text
         for sub_marker in marker.flatten()
         if isinstance(sub_marker, condition_type)
-    )
+    }
 
 
 @pytest.mark.parametrize(
@@ -635,9 +635,9 @@ def test_marker_from_path_only_reads_yamls(tmp_path: Path):
         rasa.shared.utils.io.write_yaml(data=config, target=config_file)
     loaded = Marker.from_path(tmp_path)
     assert len(loaded.sub_markers) == sum(allowed for _, allowed in suffixes)
-    assert set(sub_marker.name for sub_marker in loaded.sub_markers) == set(
+    assert {sub_marker.name for sub_marker in loaded.sub_markers} == {
         f"marker-{idx}" for idx, (_, allowed) in enumerate(suffixes) if allowed
-    )
+    }
 
 
 @pytest.mark.parametrize(

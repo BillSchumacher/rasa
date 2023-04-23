@@ -119,9 +119,7 @@ class LanguageModelFeaturizer(DenseFeaturizer, GraphComponent):
 
         if self.model_name not in model_class_dict:
             raise KeyError(
-                f"'{self.model_name}' not a valid model name. Choose from "
-                f"{str(list(model_class_dict.keys()))} or create"
-                f"a new class inheriting from this class to support your model."
+                f"'{self.model_name}' not a valid model name. Choose from {list(model_class_dict.keys())} or createa new class inheriting from this class to support your model."
             )
 
         self.model_weights = self._config["model_weights"]
@@ -192,11 +190,10 @@ class LanguageModelFeaturizer(DenseFeaturizer, GraphComponent):
             model_special_tokens_pre_processors,
         )
 
-        augmented_tokens = [
+        return [
             model_special_tokens_pre_processors[self.model_name](example_token_ids)
             for example_token_ids in token_ids
         ]
-        return augmented_tokens
 
     def _lm_specific_token_cleanup(
         self, split_token_ids: List[int], token_strings: List[Text]
@@ -473,8 +470,7 @@ class LanguageModelFeaturizer(DenseFeaturizer, GraphComponent):
         # sequence hidden states is always the first output from all models
         sequence_hidden_states = model_outputs[0]
 
-        sequence_hidden_states = sequence_hidden_states.numpy()
-        return sequence_hidden_states
+        return sequence_hidden_states.numpy()
 
     def _validate_sequence_lengths(
         self,
@@ -649,12 +645,10 @@ class LanguageModelFeaturizer(DenseFeaturizer, GraphComponent):
             batch_tokens, sequence_embeddings, shape
         )
 
-        # sequence_embeddings is a padded numpy array
-        # remove the padding, keep just the non-zero vectors
-        sequence_final_embeddings = []
-        for embeddings, tokens in zip(sequence_embeddings, batch_tokens):
-            sequence_final_embeddings.append(embeddings[: len(tokens)])
-
+        sequence_final_embeddings = [
+            embeddings[: len(tokens)]
+            for embeddings, tokens in zip(sequence_embeddings, batch_tokens)
+        ]
         return sentence_embeddings, ragged_array_to_ndarray(sequence_final_embeddings)
 
     def _get_docs_for_batch(

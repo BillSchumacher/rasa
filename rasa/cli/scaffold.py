@@ -53,13 +53,11 @@ def print_train_or_instructions(args: argparse.Namespace) -> None:
 
     print_success("Finished creating project structure.")
 
-    should_train = (
+    if should_train := (
         questionary.confirm("Do you want to train an initial model? 💪🏽")
         .skip_if(args.no_prompt, default=True)
         .ask()
-    )
-
-    if should_train:
+    ):
         print_success("Training an initial model...")
         training_result = rasa.train(
             DEFAULT_DOMAIN_PATH,
@@ -82,15 +80,13 @@ def print_run_or_instructions(args: argparse.Namespace) -> None:
     from rasa.core import constants
     import questionary
 
-    should_run = (
+    if should_run := (
         questionary.confirm(
             "Do you want to speak to the trained assistant on the command line? 🤖"
         )
         .skip_if(args.no_prompt, default=False)
         .ask()
-    )
-
-    if should_run:
+    ):
         # provide defaults for command line arguments
         attributes = [
             "endpoints",
@@ -108,20 +104,19 @@ def print_run_or_instructions(args: argparse.Namespace) -> None:
         args.port = constants.DEFAULT_SERVER_PORT
 
         shell(args)
+    elif args.no_prompt:
+        print(
+            "If you want to speak to the assistant, "
+            "run 'rasa shell' at any time inside "
+            "the project directory."
+        )
     else:
-        if args.no_prompt:
-            print(
-                "If you want to speak to the assistant, "
-                "run 'rasa shell' at any time inside "
-                "the project directory."
-            )
-        else:
-            print_success(
-                "Ok 👍🏼. "
-                "If you want to speak to the assistant, "
-                "run 'rasa shell' at any time inside "
-                "the project directory."
-            )
+        print_success(
+            "Ok 👍🏼. "
+            "If you want to speak to the assistant, "
+            "run 'rasa shell' at any time inside "
+            "the project directory."
+        )
 
 
 def init_project(args: argparse.Namespace, path: Text) -> None:
@@ -153,14 +148,12 @@ def print_cancel() -> None:
 def _ask_create_path(path: Text) -> None:
     import questionary
 
-    should_create = questionary.confirm(
+    if should_create := questionary.confirm(
         f"Path '{path}' does not exist 🧐. Create path?"
-    ).ask()
-
-    if should_create:
+    ).ask():
         try:
             os.makedirs(path)
-        except (PermissionError, OSError, FileExistsError) as e:
+        except OSError as e:
             print_error_and_exit(
                 f"Failed to create project path at '{path}'. " f"Error: {e}"
             )
@@ -176,7 +169,7 @@ def _ask_overwrite(path: Text) -> None:
     import questionary
 
     overwrite = questionary.confirm(
-        "Directory '{}' is not empty. Continue?".format(os.path.abspath(path))
+        f"Directory '{os.path.abspath(path)}' is not empty. Continue?"
     ).ask()
     if not overwrite:
         print_cancel()

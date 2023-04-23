@@ -57,12 +57,10 @@ def featurize_training_examples(
         attribute_to_features: Dict[Text, List["Features"]] = {}
         for attribute in attributes:
             if attribute == ENTITIES:
-                attribute_to_features[attribute] = []
-                # in case of entities add the tag_ids
-                for tag_spec in entity_tag_specs:
-                    attribute_to_features[attribute].append(
-                        get_tag_ids(example, tag_spec, bilou_tagging)
-                    )
+                attribute_to_features[attribute] = [
+                    get_tag_ids(example, tag_spec, bilou_tagging)
+                    for tag_spec in entity_tag_specs
+                ]
             elif attribute in example.data:
                 attribute_to_features[attribute] = example.get_all_features(
                     attribute, featurizers
@@ -97,16 +95,17 @@ def _collect_sparse_feature_sizes(
     Returns:
         A dictionary of attribute to feature sizes.
     """
-    sparse_feature_sizes = {}
-    sparse_attributes = []
-    for attribute, features in featurized_example.items():
-        if features and features[0].is_sparse():
-            sparse_attributes.append(attribute)
-    for attribute in sparse_attributes:
-        sparse_feature_sizes[attribute] = training_example.get_sparse_feature_sizes(
+    sparse_attributes = [
+        attribute
+        for attribute, features in featurized_example.items()
+        if features and features[0].is_sparse()
+    ]
+    return {
+        attribute: training_example.get_sparse_feature_sizes(
             attribute=attribute, featurizers=featurizers
         )
-    return sparse_feature_sizes
+        for attribute in sparse_attributes
+    }
 
 
 def get_tag_ids(
@@ -165,12 +164,12 @@ def _surface_attributes(
         A dictionary of attributes to a list of features for all examples.
     """
     # collect all attributes
-    attributes = set(
+    attributes = {
         attribute
         for list_of_attribute_to_features in features
         for attribute_to_features in list_of_attribute_to_features
         for attribute in attribute_to_features.keys()
-    )
+    }
 
     output = defaultdict(list)
     for list_of_attribute_to_features in features:
@@ -306,8 +305,6 @@ def convert_to_data_format(
 
     attribute_to_features = _surface_attributes(features, featurizers)
 
-    attribute_data = {}
-
     # During prediction we need to iterate over the fake features attributes to
 
     # have all keys in the resulting model data
@@ -325,8 +322,8 @@ def convert_to_data_format(
         dialogue_length = max(dialogue_length, len(_features[0]))
     absent_features = [[None] * dialogue_length] * num_examples
 
-    for attribute in attributes:
-        attribute_data[attribute] = _feature_arrays_for_attribute(
+    attribute_data = {
+        attribute: _feature_arrays_for_attribute(
             attribute,
             absent_features,
             attribute_to_features,
@@ -334,7 +331,8 @@ def convert_to_data_format(
             fake_features,
             consider_dialogue_dimension,
         )
-
+        for attribute in attributes
+    }
     # ensure that all attributes are in the same order
     attribute_data = OrderedDict(sorted(attribute_data.items()))
 
@@ -364,11 +362,7 @@ def _feature_arrays_for_attribute(
     Returns:
         A dictionary of feature type to actual features for the given attribute.
     """
-    features = (
-        attribute_to_features[attribute]
-        if attribute in attribute_to_features
-        else absent_features
-    )
+    features = attribute_to_features.get(attribute, absent_features)
 
     # in case some features for a specific attribute are
     # missing, replace them with a feature vector of zeros

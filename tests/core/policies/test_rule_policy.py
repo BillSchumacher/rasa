@@ -3168,4 +3168,4 @@ def test_initial_values_are_not_incorporated_into_rule_policy(
 
     policy.train(trackers, domain)
 
-    assert not any(["has_said_hi" in rule for rule in policy.lookup[RULES]])
+    assert all("has_said_hi" not in rule for rule in policy.lookup[RULES])

@@ -24,8 +24,9 @@ def test_shared_package_is_independent():
             outside_rasa_imports = [
                 import_line
                 for import_line in rasa_imports
-                if not any(
-                    shared_import in import_line for shared_import in shared_imports
+                if all(
+                    shared_import not in import_line
+                    for shared_import in shared_imports
                 )
             ]
 

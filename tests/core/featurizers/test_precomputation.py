@@ -46,12 +46,12 @@ def _dummy_features(id: int, attribute: Text) -> Features:
 def _create_entity(
     value: Text, type: Text, role: Optional[Text] = None, group: Optional[Text] = None
 ) -> Dict[Text, Text]:
-    entity = {}
-    entity[ENTITY_ATTRIBUTE_VALUE] = value
-    entity[ENTITY_ATTRIBUTE_TYPE] = type
-    entity[ENTITY_ATTRIBUTE_ROLE] = role
-    entity[ENTITY_ATTRIBUTE_GROUP] = group
-    return entity
+    return {
+        ENTITY_ATTRIBUTE_VALUE: value,
+        ENTITY_ATTRIBUTE_TYPE: type,
+        ENTITY_ATTRIBUTE_ROLE: role,
+        ENTITY_ATTRIBUTE_GROUP: group,
+    }
 
 
 def test_container_messages():
@@ -97,13 +97,9 @@ def test_container_fingerprint_differ_for_containers_with_different_insertion_or
     assert container2.fingerprint() != container1.fingerprint()
 
 
-@pytest.mark.parametrize(
-    "no_or_multiple_key_attributes",
-    [list(), ["other"]]
-    + list(
+@pytest.mark.parametrize("no_or_multiple_key_attributes", ([[], ["other"]] + list(
         itertools.permutations(MessageContainerForCoreFeaturization.KEY_ATTRIBUTES, 2)
-    ),
-)
+    )))
 def test_container_add_fails_if_message_has_wrong_attributes(
     no_or_multiple_key_attributes: List[Text],
 ):
@@ -272,8 +268,8 @@ def test_container_feature_lookup_fails_if_different_features_for_same_attribute
 def test_container_feature_lookup_works_if_messages_are_broken_but_consistent():
     not_broken_but_strange_table = MessageContainerForCoreFeaturization()
     not_broken_but_strange_table._table = {
-        TEXT: {"A": Message(data=dict())},
-        INTENT: {"B": Message(data=dict(), features=[_dummy_features(1, TEXT)])},
+        TEXT: {"A": Message(data={})},
+        INTENT: {"B": Message(data={}, features=[_dummy_features(1, TEXT)])},
     }
     features = not_broken_but_strange_table.collect_features({TEXT: "A", INTENT: "B"})
     assert TEXT in features and len(features[TEXT]) == 1
@@ -380,9 +376,9 @@ def test_converter_for_training(input_converter: CoreFeaturizationInputConverter
         intents=["greet", "inform", "domain-only-intent"],
         entities=["entity_name"],
         slots=[],
-        responses=dict(),
+        responses={},
         action_names=["action_listen", "utter_greet"],
-        forms=dict(),
+        forms={},
         data={},
         action_texts=["Hi how are you?"],
     )

@@ -100,14 +100,15 @@ def test_predictions_added(training_data, tmpdir, featurizer_sparse):
 
         confidences = [r["confidence"] for r in ranking]
         assert all(
-            [confidences[i] > confidences[i + 1] for i in range(len(confidences) - 1)]
+            confidences[i] > confidences[i + 1]
+            for i in range(len(confidences) - 1)
         )
 
         # check that all ranking names are from training data
-        assert all([r["name"] in training_intents for r in ranking])
+        assert all(r["name"] in training_intents for r in ranking)
 
         # confirm that all confidences are between 0 and 1
-        assert all([0 <= r["confidence"] <= 1 for r in ranking])
+        assert all(0 <= r["confidence"] <= 1 for r in ranking)
 
     classifier.persist()
 

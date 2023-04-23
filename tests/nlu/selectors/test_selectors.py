@@ -338,7 +338,7 @@ def test_train_model_checkpointing(
 
     with default_model_storage.read_from(resource) as model_dir:
         all_files = list(model_dir.rglob("*.*"))
-        assert any(["from_checkpoint" in str(filename) for filename in all_files])
+        assert any("from_checkpoint" in str(filename) for filename in all_files)
 
 
 @pytest.mark.skip_on_windows
@@ -489,7 +489,7 @@ async def test_softmax_ranking(
     # check that the output was correctly truncated after normalization
     assert len(response_ranking) == output_length
     output_sums_to_1 = sum(
-        [intent.get("confidence") for intent in response_ranking]
+        intent.get("confidence") for intent in response_ranking
     ) == pytest.approx(1)
     assert output_sums_to_1 == sums_up_to_1
 
@@ -553,7 +553,7 @@ def test_warning_when_transformer_and_hidden_layers_enabled(
     else:
         # Check all warnings since there may be multiple other warnings we don't care
         # about in this test case.
-        assert not any(warning_str in record.message.args[0] for record in records)
+        assert all(warning_str not in record.message.args[0] for record in records)
 
 
 @pytest.mark.parametrize(
@@ -598,7 +598,7 @@ def test_sets_integer_transformer_size_when_needed(
         assert selector.component_config[TRANSFORMER_SIZE] == DEFAULT_TRANSFORMER_SIZE
     else:
         # check that the specific warning was not raised
-        assert not any(warning_str in record.message.args[0] for record in records)
+        assert all(warning_str not in record.message.args[0] for record in records)
         # check that transformer size was not changed
         assert selector.component_config[TRANSFORMER_SIZE] == config.get(
             TRANSFORMER_SIZE, None  # None is the default transformer size

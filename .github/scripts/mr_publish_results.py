@@ -115,8 +115,7 @@ def transform_to_seconds(duration: Text) -> float:
         seconds = float(m_split[0].rstrip("s"))
     else:
         raise Exception(f"Unsupported duration: {duration}")
-    overall_seconds = hours * 60 * 60 + minutes * 60 + seconds
-    return overall_seconds
+    return hours * 60 * 60 + minutes * 60 + seconds
 
 
 def prepare_ml_metric(result: Dict[Text, Any]) -> Dict[Text, float]:
@@ -158,7 +157,7 @@ def prepare_ml_metrics(results: List[Dict[Text, Any]]) -> Dict[Text, float]:
     metrics_ml = {}
     for result in results:
         new_metrics_ml = prepare_ml_metric(result)
-        metrics_ml.update(new_metrics_ml)
+        metrics_ml |= new_metrics_ml
 
     return metrics_ml
 
@@ -174,8 +173,7 @@ def prepare_datadog_tags() -> List[Text]:
         **create_dict_of_env(OTHER_TAGS),
         **create_dict_of_env(GIT_RELATED_TAGS),
     }
-    tags_list = [f"{k}:{v}" for k, v in tags.items()]
-    return tags_list
+    return [f"{k}:{v}" for k, v in tags.items()]
 
 
 def send_to_datadog(results: List[Dict[Text, Any]]) -> None:
@@ -200,16 +198,15 @@ def send_to_datadog(results: List[Dict[Text, Any]]) -> None:
 
     # Send metrics about ML model performance
     metrics_ml = prepare_ml_metrics(results)
-    for metric_name, metric_value in metrics_ml.items():
-        series.append(
-            Series(
-                metric=f"{METRIC_ML_PREFIX}{metric_name}.gauge",
-                type="gauge",
-                points=[Point([timestamp, float(metric_value)])],
-                tags=tags_list,
-            )
+    series.extend(
+        Series(
+            metric=f"{METRIC_ML_PREFIX}{metric_name}.gauge",
+            type="gauge",
+            points=[Point([timestamp, float(metric_value)])],
+            tags=tags_list,
         )
-
+        for metric_name, metric_value in metrics_ml.items()
+    )
     body = MetricsPayload(series=series)
     with ApiClient(Configuration()) as api_client:
         api_instance = MetricsApi(api_client)

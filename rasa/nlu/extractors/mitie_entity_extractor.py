@@ -79,7 +79,7 @@ class MitieEntityExtractor(GraphComponent, EntityExtractorMixin):
         self.validate_config(self._config)
         self._ner = ner
 
-    def validate_config(cls, config: Dict[Text, Any]) -> None:
+    def validate_config(self, config: Dict[Text, Any]) -> None:
         """Checks whether the given configuration is valid.
 
         Args:

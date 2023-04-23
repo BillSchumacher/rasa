@@ -29,10 +29,7 @@ def _setup_gpu_environment() -> None:
     from tensorflow import config as tf_config
 
     parsed_gpu_config = _parse_gpu_config(gpu_memory_config)
-    physical_gpus = tf_config.list_physical_devices("GPU")
-
-    # Logic taken from https://www.tensorflow.org/guide/gpu
-    if physical_gpus:
+    if physical_gpus := tf_config.list_physical_devices("GPU"):
         for gpu_id, gpu_id_memory in parsed_gpu_config.items():
             _allocate_gpu_memory(physical_gpus[gpu_id], gpu_id_memory)
 

@@ -334,9 +334,9 @@ async def test_agent_update_model(trained_core_model: Text, trained_nlu_model: T
     )
 
     agent2.load_model(trained_nlu_model)
-    assert not (
+    assert (
         agent1.processor.model_metadata.predict_schema
-        == agent2.processor.model_metadata.predict_schema
+        != agent2.processor.model_metadata.predict_schema
     )
 
 

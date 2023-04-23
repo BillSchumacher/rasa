@@ -30,8 +30,7 @@ def git_existing_tag_versions() -> List[Version]:
     """Return all existing tags in the local git repo."""
     stdout = check_output(["git", "tag"])
     tags = set(stdout.decode().split("\n"))
-    versions = [Version(tag) for tag in tags if is_valid_version(tag)]
-    return versions
+    return [Version(tag) for tag in tags if is_valid_version(tag)]
 
 
 def git_plain_tag_versions(versions: List[Version]) -> List[Version]:

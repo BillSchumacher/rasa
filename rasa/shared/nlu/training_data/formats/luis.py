@@ -26,22 +26,18 @@ class LuisReader(JsonTrainingDataReader):
 
     @staticmethod
     def _extract_regex_features(js: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        regex_features: List[Dict[Text, Any]] = []
-
-        for r in js.get("regex_features", []):
-            if r.get("activated", False):
-                regex_features.append(
-                    {"name": r.get("name"), "pattern": r.get("pattern")}
-                )
-
+        regex_features: List[Dict[Text, Any]] = [
+            {"name": r.get("name"), "pattern": r.get("pattern")}
+            for r in js.get("regex_features", [])
+            if r.get("activated", False)
+        ]
         # LUIS removed `regex_features` and exports regular expressions in `
         # regex_entities` now:
         # https://stackoverflow.com/questions/48170631/what-happened-to-the-regex-features # noqa: E501
-        for r in js.get("regex_entities", []):
-            regex_features.append(
-                {"name": r.get("name"), "pattern": r.get("regexPattern")}
-            )
-
+        regex_features.extend(
+            {"name": r.get("name"), "pattern": r.get("regexPattern")}
+            for r in js.get("regex_entities", [])
+        )
         return regex_features
 
     def read_from_json(self, js: Dict[Text, Any], **kwargs: Any) -> "TrainingData":

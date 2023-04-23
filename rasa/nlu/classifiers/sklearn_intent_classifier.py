@@ -74,10 +74,7 @@ class SklearnIntentClassifier(GraphComponent, IntentClassifier):
         self._model_storage = model_storage
         self._resource = resource
 
-        if le is not None:
-            self.le = le
-        else:
-            self.le = LabelEncoder()
+        self.le = le if le is not None else LabelEncoder()
         self.clf = clf
 
     @classmethod

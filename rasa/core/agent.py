@@ -46,9 +46,9 @@ async def load_from_server(agent: Agent, model_server: EndpointConfig) -> Agent:
     # a model.
     await _update_model_from_server(model_server, agent)
 
-    wait_time_between_pulls = model_server.kwargs.get("wait_time_between_pulls", 100)
-
-    if wait_time_between_pulls:
+    if wait_time_between_pulls := model_server.kwargs.get(
+        "wait_time_between_pulls", 100
+    ):
         # continuously pull the model every `wait_time_between_pulls` seconds
         await _schedule_model_pulling(model_server, int(wait_time_between_pulls), agent)
 
@@ -116,34 +116,26 @@ async def _pull_model_and_fingerprint(
         try:
             params = model_server.combine_parameters()
             async with session.request(
-                "GET",
-                model_server.url,
-                timeout=DEFAULT_REQUEST_TIMEOUT,
-                headers=headers,
-                params=params,
-            ) as resp:
+                            "GET",
+                            model_server.url,
+                            timeout=DEFAULT_REQUEST_TIMEOUT,
+                            headers=headers,
+                            params=params,
+                        ) as resp:
 
                 if resp.status in [204, 304]:
                     logger.debug(
-                        "Model server returned {} status code, "
-                        "indicating that no new model is available. "
-                        "Current fingerprint: {}"
-                        "".format(resp.status, fingerprint)
+                        f"Model server returned {resp.status} status code, indicating that no new model is available. Current fingerprint: {fingerprint}"
                     )
                     return None
                 elif resp.status == 404:
                     logger.debug(
-                        "Model server could not find a model at the requested "
-                        "endpoint '{}'. It's possible that no model has been "
-                        "trained, or that the requested tag hasn't been "
-                        "assigned.".format(model_server.url)
+                        f"Model server could not find a model at the requested endpoint '{model_server.url}'. It's possible that no model has been trained, or that the requested tag hasn't been assigned."
                     )
                     return None
                 elif resp.status != 200:
                     logger.debug(
-                        "Tried to fetch model from server, but server response "
-                        "status code is {}. We'll retry later..."
-                        "".format(resp.status)
+                        f"Tried to fetch model from server, but server response status code is {resp.status}. We'll retry later..."
                     )
                     return None
 
@@ -153,16 +145,14 @@ async def _pull_model_and_fingerprint(
                 with open(model_path, "wb") as file:
                     file.write(await resp.read())
 
-                logger.debug("Saved model to '{}'".format(os.path.abspath(model_path)))
+                logger.debug(f"Saved model to '{os.path.abspath(model_path)}'")
 
                 # return the new fingerprint
                 return resp.headers.get("ETag")
 
         except aiohttp.ClientError as e:
             logger.debug(
-                "Tried to fetch model from server, but "
-                "couldn't reach server. We'll retry later... "
-                "Error: {}.".format(e)
+                f"Tried to fetch model from server, but couldn't reach server. We'll retry later... Error: {e}."
             )
             return None
 
@@ -510,10 +500,7 @@ class Agent:
 
     def _set_fingerprint(self, fingerprint: Optional[Text] = None) -> None:
 
-        if fingerprint:
-            self.fingerprint = fingerprint
-        else:
-            self.fingerprint = uuid.uuid4().hex
+        self.fingerprint = fingerprint if fingerprint else uuid.uuid4().hex
 
     @staticmethod
     def _create_tracker_store(
@@ -529,10 +516,7 @@ class Agent:
 
     @staticmethod
     def _create_lock_store(store: Optional[LockStore]) -> LockStore:
-        if store is not None:
-            return store
-
-        return InMemoryLockStore()
+        return store if store is not None else InMemoryLockStore()
 
     def load_model_from_remote_storage(self, model_name: Text) -> None:
         """Loads an Agent from remote storage."""

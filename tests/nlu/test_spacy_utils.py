@@ -15,10 +15,12 @@ from rasa.shared.nlu.training_data.message import Message
 def create_spacy_nlp_component(
     model_name: Text = "en_core_web_md", case_sensitive: Optional[bool] = None
 ) -> SpacyNLP:
-    component = SpacyNLP.create(
-        {"model": model_name, "case_sensitive": case_sensitive}, None, None, None
+    return SpacyNLP.create(
+        {"model": model_name, "case_sensitive": case_sensitive},
+        None,
+        None,
+        None,
     )
-    return component
 
 
 @pytest.mark.parametrize(
@@ -83,8 +85,7 @@ def test_spacy_preprocessor_process_training_data(
 
     for message in training_data.training_examples:
         for attr in DENSE_FEATURIZABLE_ATTRIBUTES:
-            attr_text = message.data.get(attr)
-            if attr_text:
+            if attr_text := message.data.get(attr):
                 doc = message.data[SPACY_DOCS[attr]]
                 assert isinstance(doc, spacy.tokens.doc.Doc)
                 assert doc.text == attr_text.lower()

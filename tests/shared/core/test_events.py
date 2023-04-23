@@ -341,7 +341,7 @@ def test_event_default_metadata(event_class: Type[Event]):
     # case the metadata should be included with a default value of {}.
     event = Event.from_parameters(parameters)
 
-    if isinstance(event, BotUttered) or isinstance(event, UserUttered):
+    if isinstance(event, (BotUttered, UserUttered)):
         assert event.as_dict()["metadata"] == {}
     else:
         assert "metadata" not in event.as_dict()

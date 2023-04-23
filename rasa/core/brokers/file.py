@@ -30,11 +30,7 @@ class FileEventBroker(EventBroker):
         event_loop: Optional[AbstractEventLoop] = None,
     ) -> Optional["FileEventBroker"]:
         """Creates broker. See the parent class for more information."""
-        if broker_config is None:
-            return None
-
-        # noinspection PyArgumentList
-        return cls(**broker_config.kwargs)
+        return None if broker_config is None else cls(**broker_config.kwargs)
 
     def _event_logger(self) -> logging.Logger:
         """Instantiate the file logger."""

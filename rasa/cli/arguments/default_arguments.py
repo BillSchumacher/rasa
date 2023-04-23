@@ -17,10 +17,7 @@ def add_model_param(
     add_positional_arg: bool = True,
     default: Optional[Text] = DEFAULT_MODELS_PATH,
 ) -> None:
-    help_text = (
-        "Path to a trained {} model. If a directory is specified, it will "
-        "use the latest model in this directory.".format(model_name)
-    )
+    help_text = f"Path to a trained {model_name} model. If a directory is specified, it will use the latest model in this directory."
     parser.add_argument("-m", "--model", type=str, default=default, help=help_text)
     if add_positional_arg:
         parser.add_argument(

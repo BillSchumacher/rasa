@@ -560,9 +560,8 @@ class CRFEntityExtractor(GraphComponent, EntityExtractorMixin):
         tokens = message.get(TOKENS_NAMES[TEXT])
         if len(tokens) != len(features.features):
             rasa.shared.utils.io.raise_warning(
-                f"Number of dense features ({len(features.features)}) for attribute "
-                f"'{TEXT}' does not match number of tokens ({len(tokens)}).",
-                docs=DOCS_URL_COMPONENTS + "#crfentityextractor",
+                f"Number of dense features ({len(features.features)}) for attribute '{TEXT}' does not match number of tokens ({len(tokens)}).",
+                docs=f"{DOCS_URL_COMPONENTS}#crfentityextractor",
             )
             return None
 
@@ -577,8 +576,7 @@ class CRFEntityExtractor(GraphComponent, EntityExtractorMixin):
             str(index): token_features
             for index, token_features in enumerate(crf_token.dense_features)
         }
-        converted = {"text_dense_features": feature_dict}
-        return converted
+        return {"text_dense_features": feature_dict}
 
     def _convert_to_crf_tokens(self, message: Message) -> List[CRFToken]:
         """Take a message and convert it to crfsuite format."""

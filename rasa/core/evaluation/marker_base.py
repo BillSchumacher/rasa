@@ -196,16 +196,15 @@ class Marker(ABC):
 
     def get_tag(self) -> Text:
         """Returns the tag describing this marker."""
-        if self.negated:
-            tag = self.negated_tag()
-            if tag is None:
-                # We allow the instantiation of a negated marker even if there
-                # is no negated tag (ie. direct creation of the negated marker from
-                # a config is not allowed). To be able to print a tag nonetheless:
-                tag = f"not({self.positive_tag()})"
-            return tag
-        else:
+        if not self.negated:
             return self.positive_tag()
+        tag = self.negated_tag()
+        if tag is None:
+            # We allow the instantiation of a negated marker even if there
+            # is no negated tag (ie. direct creation of the negated marker from
+            # a config is not allowed). To be able to print a tag nonetheless:
+            tag = f"not({self.positive_tag()})"
+        return tag
 
     @staticmethod
     @abstractmethod
@@ -336,7 +335,7 @@ class Marker(ABC):
             and event.action_name
             == rasa.shared.core.constants.ACTION_SESSION_START_NAME
         ]
-        if len(session_start_indices) == 0:
+        if not session_start_indices:
             return [(events, 0)]
         sessions_and_start_indices: List[Tuple[List[Event], int]] = []
         for session_idx in range(len(session_start_indices) - 1):
@@ -634,10 +633,10 @@ class Marker(ABC):
                     )
 
             telemetry.track_markers_stats_computed(processed_trackers_count)
-            if overall_stats_file:
-                stats.overall_statistic_to_csv(path=overall_stats_file)
-            if session_stats_file:
-                stats.per_session_statistics_to_csv(path=session_stats_file)
+        if overall_stats_file:
+            stats.overall_statistic_to_csv(path=overall_stats_file)
+        if session_stats_file:
+            stats.per_session_statistics_to_csv(path=session_stats_file)
 
     @staticmethod
     def _save_results(path: Path, results: Dict[Text, List[SessionEvaluation]]) -> None:
@@ -709,7 +708,7 @@ class OperatorMarker(Marker, ABC):
                 f"Please adapt your configuration so that there are exactly "
                 f"{expected_num} sub-markers. "
             )
-        elif len(markers) == 0:
+        elif not markers:
             raise InvalidMarkerConfig(
                 f"Expected some sub-markers to be specified for {self} but "
                 f"found none. Please adapt your configuration so that there is "
@@ -744,8 +743,7 @@ class OperatorMarker(Marker, ABC):
             an iterator over all markers that are part of this marker
         """
         for marker in self.sub_markers:
-            for sub_marker in marker.flatten():
-                yield sub_marker
+            yield from marker.flatten()
         yield self
 
     def reset(self) -> None:
